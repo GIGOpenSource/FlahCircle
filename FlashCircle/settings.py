@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'advertisement',
     'categories',
     'contents',
+    'favourites',
 ]
 
 MIDDLEWARE = [
