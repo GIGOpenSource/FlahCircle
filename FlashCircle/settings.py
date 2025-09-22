@@ -50,6 +50,8 @@ INSTALLED_APPS = [
     'likes',
     'chat',
     'orders',
+    'payments',
+
 
 
 ]
