@@ -52,9 +52,7 @@ INSTALLED_APPS = [
     'orders',
     'payments',
     'societies',
-
-
-
+    'tags',
 
 ]
 
