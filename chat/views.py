@@ -1,6 +1,6 @@
 from rest_framework import viewsets
-from messages.models import Message, Session, Settings
-from messages.serializers import MessageSerializer, SessionSerializer, SettingsSerializer
+from chat.models import Message, Session, Settings
+from chat.serializers import MessageSerializer, SessionSerializer, SettingsSerializer
 
 
 class MessageViewSet(viewsets.ModelViewSet):

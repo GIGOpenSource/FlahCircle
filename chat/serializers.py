@@ -1,6 +1,6 @@
 # user/serializers.py
 from rest_framework import serializers
-from messages.models import Message, Session, Settings
+from chat.models import Message, Session, Settings
 
 
 class MessageSerializer(serializers.ModelSerializer):
