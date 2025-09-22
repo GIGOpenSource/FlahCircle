@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'categories',
     'contents',
     'favourites',
+    'follows',
 ]
 
 MIDDLEWARE = [
