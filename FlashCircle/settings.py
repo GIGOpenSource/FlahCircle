@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     'payments',
     'societies',
     'tags',
+    'tasks',
 
 ]
 
