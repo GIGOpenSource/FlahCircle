@@ -51,6 +51,8 @@ INSTALLED_APPS = [
     'chat',
     'orders',
     'payments',
+    'societies',
+
 
 
 
