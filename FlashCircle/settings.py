@@ -42,6 +42,20 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'user',
+    'advertisement',
+    'categories',
+    'contents',
+    'favourites',
+    'follows',
+    'goods',
+    'notifications',
+    'likes',
+    'chat',
+    'orders',
+    'payments',
+    'societies',
+    'tags',
+
 ]
 
 MIDDLEWARE = [
@@ -50,7 +64,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.contrib.chat.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
@@ -81,7 +95,7 @@ TEMPLATES = [
                 'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+                'django.contrib.chat.context_processors.chat',
             ],
         },
     },
