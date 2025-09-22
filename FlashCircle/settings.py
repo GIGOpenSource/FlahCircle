@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/5.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
-
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -69,16 +69,34 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'FlashCircle.wsgi.application'
 
-
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'FlashCicle 管理 API',
+    'DESCRIPTION': '简化版后端接口文档（中文）',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+}
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+POSTGRES_HOST = os.getenv('POSTGRES_HOST') or os.getenv('DB_HOST') or "127.0.0.1"
+if POSTGRES_HOST:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv('POSTGRES_DB', 'flashc'),
+            'USER': os.getenv('POSTGRES_USER', 'flashc'),
+            'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'flashc'),
+            'HOST': POSTGRES_HOST,
+            'PORT': os.getenv('POSTGRES_PORT', '5433'),
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation
