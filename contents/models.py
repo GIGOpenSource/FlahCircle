@@ -22,6 +22,8 @@ class Content(models.Model):
     score_count = models.IntegerField(blank=True, null=True, default=0)
     score_total = models.IntegerField(blank=True, null=True, default=0)
     publish_time = models.DateTimeField(blank=True, null=True)
+    is_vip = models.BooleanField(default=False)
+    is_permanent = models.BooleanField(default=False)
     create_time = models.DateTimeField(auto_now_add=True)
     update_time = models.DateTimeField(auto_now=True)
 
