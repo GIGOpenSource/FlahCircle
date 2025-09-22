@@ -4,6 +4,8 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status, generics, permissions, viewsets
 from rest_framework.authtoken.views import ObtainAuthToken
 from django.contrib.auth import get_user_model
+
+from middleware.base_views import BaseViewSet
 from .serializers import UserRegisterSerializer, UserLoginSerializer, UserSerializer, GroupSerializer
 from rest_framework.authtoken.models import Token
 from middleware.utils import ApiResponse
@@ -38,6 +40,26 @@ class RegisterView(generics.CreateAPIView):
             })
         return ApiResponse(code=400, message=serializer.errors)
 
+    def list(self, request, *args, **kwargs):
+        try:
+            queryset = self.filter_queryset(self.get_queryset())
+            page = self.paginate_queryset(queryset)
+            if page is not None:
+                serializer = self.get_serializer(page, many=True)
+                return ApiResponse(code=200, data=serializer.data, message="用户列表获取成功")
+                # return self.get_paginated_response(serializer.data)
+
+            serializer = self.get_serializer(queryset, many=True)
+            return ApiResponse(code=200, data=serializer.data, message="用户列表获取成功")
+        except Exception as e:
+            return ApiResponse(code=500, message=f"获取广告列表失败: {str(e)}")
+    def retrieve(self, request, *args, **kwargs):
+        try:
+            instance = self.get_object()
+            serializer = self.get_serializer(instance)
+            return ApiResponse(data=serializer.data, message="广告详情获取成功")
+        except Exception as e:
+            return ApiResponse(code=500, message=f"获取广告详情失败: {str(e)}")
 @extend_schema(tags=["用户管理"])
 class CustomLoginView(ObtainAuthToken):
     permission_classes = [permissions.AllowAny]
@@ -97,7 +119,7 @@ class CustomLoginView(ObtainAuthToken):
         responses={204: "删除成功", 404: "用户不存在"}
     )
 )
-class UserViewSet(viewsets.ModelViewSet):
+class UserViewSet(BaseViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
@@ -112,9 +134,10 @@ class UserViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """数据权限过滤"""
         user = self.request.user
-        if user.is_admin_role():  # 使用模型中定义的管理员判断方法
-            return User.objects.all()
-        return User.objects.filter(id=user.id)  # 普通用户仅能查看自己
+        # if user.is_admin_role():  # 使用模型中定义的管理员判断方法
+        #     return User.objects.all()
+        return User.objects.all()
+        # return User.objects.filter(id=user.id)  # 普通用户仅能查看自己
 
     def check_object_permissions(self, request, obj):
         """对象级权限检查"""
@@ -126,10 +149,7 @@ class UserViewSet(viewsets.ModelViewSet):
 # 新增用户组管理视图集
 @extend_schema(tags=["用户组管理"])
 @extend_schema_view(
-    list=extend_schema(
-        summary="获取用户组列表",
-        description="返回所有用户组，仅管理员可访问",
-        responses={200: GroupSerializer(many=True)}
+    list=extend_schema(summary="获取用户组列表",description="返回所有用户组，仅管理员可访问",responses={200: GroupSerializer(many=True)}
     ),
     create=extend_schema(
         summary="创建用户组",
@@ -158,7 +178,7 @@ class UserViewSet(viewsets.ModelViewSet):
         responses={204: "删除成功", 404: "用户组不存在"}
     )
 )
-class GroupViewSet(viewsets.ModelViewSet):
+class GroupViewSet(BaseViewSet):
     queryset = Group.objects.all()
     serializer_class = GroupSerializer
     permission_classes = [permissions.IsAdminUser]  # 仅管理员可操作用户组

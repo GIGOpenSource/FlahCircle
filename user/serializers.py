@@ -33,12 +33,6 @@ class UserSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'date_joined']
 
-# class GroupSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = Group
-#         fields = ['id', 'name']
-#         read_only_fields = ['id']
-
 class UserRegisterSerializer(serializers.ModelSerializer):
     password2 = serializers.CharField(write_only=True, required=True)
 

@@ -64,9 +64,10 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.chat.middleware.MessageMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
@@ -81,8 +82,15 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_RENDERER_CLASSES': [
+        # 保留默认的 JSON 渲染器（可选）
+        'rest_framework.renderers.JSONRenderer',
+        # 添加自定义响应渲染逻辑（如果需要扩展）
+    ],
+    # 重写默认响应类
+    'DEFAULT_RESPONSE_CLASS': 'middleware.utils.ApiResponse',
 }
-
+ALLOWED_HOSTS = ['*']
 ROOT_URLCONF = 'FlashCircle.urls'
 AUTH_USER_MODEL = 'user.User'
 TEMPLATES = [
@@ -95,7 +103,7 @@ TEMPLATES = [
                 'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
-                'django.contrib.chat.context_processors.chat',
+                'django.contrib.messages.context_processors.messages',
             ],
         },
     },

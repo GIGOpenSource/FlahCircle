@@ -8,4 +8,5 @@ router.register(r'settings', PaymentSettingsViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
+
 ]
