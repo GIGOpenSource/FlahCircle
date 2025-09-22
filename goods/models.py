@@ -19,4 +19,4 @@ class Good(models.Model):
 
     class Meta:
         db_table = 't_goods'
-        ordering = ['create_time', 'title']
+        ordering = ['create_time', 'name']

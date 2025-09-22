@@ -30,5 +30,6 @@ urlpatterns = [
     path('api/favourites/', include('favourites.urls')),
     path('api/follows/', include('follows.urls')),
     path('api/goods/', include('goods.urls')),
+    path('api/notifications/', include('notifications.urls')),
 ]
 
