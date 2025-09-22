@@ -33,4 +33,5 @@ class User(AbstractUser):
 
     def is_admin_role(self):
         """判断用户是否为管理员"""
-        return self.groups.filter(name='Admin').exists()
+        return self.member_level == "admin"
+        # return self.groups.filter(name='Admin').exists()
