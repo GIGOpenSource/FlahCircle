@@ -29,7 +29,7 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             'id', 'username', 'email', 'phone', 'avatar',
-            'member_level', 'groups', 'group_ids', 'date_joined'
+            'member_level','bio', 'groups', 'group_ids', 'date_joined'
         ]
         read_only_fields = ['id', 'date_joined']
 
@@ -52,5 +52,17 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         return user
 
 class UserLoginSerializer(serializers.Serializer):
-    username = serializers.CharField(required=True)
+    username = serializers.CharField(required=True, max_length=150)
     password = serializers.CharField(required=True, write_only=True)
+
+    def validate(self, data):
+        """验证登录数据"""
+        username = data.get('username')
+        password = data.get('password')
+
+        if not username:
+            raise serializers.ValidationError("用户名不能为空")
+        if not password:
+            raise serializers.ValidationError("密码不能为空")
+
+        return data

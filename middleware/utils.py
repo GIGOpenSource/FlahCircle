@@ -1,3 +1,4 @@
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 
 
@@ -24,3 +25,23 @@ class ApiResponse(Response):
         }
         # 始终使用200作为HTTP状态码
         super().__init__(response_data, status=200, **kwargs)
+
+
+class CustomPagination(PageNumberPagination):
+    page_size = 10  # 默认每页条数
+    page_query_param = 'currentPage'  # 关键：匹配前端的 "currentPage" 参数（指定页码）
+    page_size_query_param = 'pageSize'  # 匹配前端的 "pageSize" 参数（指定每页条数）
+    max_page_size = 100  # 最大每页条数限制
+
+    def get_paginated_response(self, data):
+        print("分页查询")
+        # 现在这个方法会在分页生效时被自动调用
+        return ApiResponse({
+            'pagination': {
+                'page': self.page.number,  # 当前页码
+                'page_size': self.page_size,  # 每页条数
+                'total': self.page.paginator.count,  # 总记录数
+                'total_pages': self.page.paginator.num_pages  # 总页数
+            },
+            'results': data
+        })
