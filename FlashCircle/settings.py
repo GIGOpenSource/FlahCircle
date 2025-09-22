@@ -48,6 +48,8 @@ INSTALLED_APPS = [
     'goods',
     'notifications',
     'likes',
+    'messages',
+
 ]
 
 MIDDLEWARE = [
