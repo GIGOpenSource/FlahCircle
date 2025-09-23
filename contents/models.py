@@ -1,5 +1,6 @@
 from django.db import models
 
+# 用于首页短视频 / 发现页长视频表
 class Content(models.Model):
     title = models.CharField(max_length=255, blank=True, null=True)
     description = models.CharField(max_length=255, blank=True, null=True)

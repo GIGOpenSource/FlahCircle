@@ -9,7 +9,8 @@ from societies.serializers import SocialDynamicSerializer
 
 @extend_schema_view(
     list=extend_schema(summary='获取动态视频',tags=['社区动态'],
-        parameters=[OpenApiParameter(name='type', description='type字段过滤'),]
+        parameters=[OpenApiParameter(name='type', description='视频分类 长短视频'),
+        OpenApiParameter(name='tabs ', description='顶端分类推荐、关注、最新')]
     ),
     retrieve=extend_schema(summary='获取动态视频详情',tags=['社区动态']),
     create=extend_schema(summary='创建动态视频',tags=['社区动态']),
@@ -22,8 +23,7 @@ class DynamicViewSet(BaseViewSet):
     serializer_class = SocialDynamicSerializer
     pagination_class = CustomPagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-
-    filterset_fields = ['type']
+    filterset_fields = ['type','tabs']
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())

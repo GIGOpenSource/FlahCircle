@@ -11,14 +11,9 @@ class Dynamic(models.Model):
     )
     content = models.TextField(blank=True, null=True)
     title = models.CharField(max_length=255, blank=True, null=True)
+    tabs = models.CharField(max_length=255, blank=True, null=True)
     type = models.CharField(max_length=255, choices=DYNAMIC_TYPES,blank=True, null=True)
     images = models.JSONField(blank=True, null=True, help_text="图片URL数组，例如: ['url1', 'url2']")
-    # images = ArrayField(
-    #     models.CharField(max_length=500),
-    #     blank=True,
-    #     null=True,
-    #     help_text="图片URL数组"
-    # )
     video_url = models.JSONField(blank=True, null=True)
     is_free = models.BooleanField(default=True)
     is_vip = models.BooleanField(default=True)
@@ -36,7 +31,7 @@ class Dynamic(models.Model):
 
     class Meta:
         db_table = 't_social_dynamic'
-        ordering = ['create_time']
+        ordering = ['-create_time']
 
     def save(self, *args, **kwargs):
         if self.user_id:

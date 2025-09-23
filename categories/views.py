@@ -8,14 +8,14 @@ from middleware.utils import ApiResponse, CustomPagination
 
 
 @extend_schema_view(
-    list=extend_schema(summary='获取发现-精选',tags=['发现-精选'],
+    list=extend_schema(summary='获取标签分类',tags=['标签分类'],
         parameters=[OpenApiParameter(name='type', description='type字段过滤'),]
     ),
-    retrieve=extend_schema(summary='获取发现-精选详情',tags=['发现-精选']),
-    create=extend_schema(summary='创建发现-精选',tags=['发现-精选']),
-    update=extend_schema(summary='更新发现-精选',tags=['发现-精选']),
-    partial_update=extend_schema(summary='部分更新发现-精选',tags=['发现-精选']),
-    destroy=extend_schema(summary='删除发现-精选',tags=['发现-精选'])
+    retrieve=extend_schema(summary='获取标签分类详情',tags=['标签分类']),
+    create=extend_schema(summary='创建标签分类',tags=['标签分类']),
+    update=extend_schema(summary='更新标签分类',tags=['标签分类']),
+    partial_update=extend_schema(summary='部分更新标签分类',tags=['标签分类']),
+    destroy=extend_schema(summary='删除标签分类',tags=['标签分类'])
 )
 class CategoryViewSet(BaseViewSet):
     queryset = Category.objects.all()

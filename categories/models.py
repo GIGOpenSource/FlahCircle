@@ -6,6 +6,7 @@ class Category(models.Model):
     description = models.TextField(blank=True, null=True)
     parent_id = models.IntegerField(blank=True, null=True)
     icon_url = models.CharField(max_length=255, blank=True, null=True)
+
     parent_name = models.CharField(max_length=255, blank=True, null=True)
     status = models.CharField(max_length=255, blank=True, null=True)
     is_active = models.BooleanField(blank=True, null=True, default=False)
