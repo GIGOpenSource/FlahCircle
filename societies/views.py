@@ -8,14 +8,14 @@ from societies.models import Dynamic
 from societies.serializers import SocialDynamicSerializer
 
 @extend_schema_view(
-    list=extend_schema(summary='获取动态视频',tags=['视频管理'],
+    list=extend_schema(summary='获取动态视频',tags=['社区动态'],
         parameters=[OpenApiParameter(name='type', description='type字段过滤'),]
     ),
-    retrieve=extend_schema(summary='获取动态视频详情',tags=['视频管理']),
-    create=extend_schema(summary='创建动态视频',tags=['视频管理']),
-    update=extend_schema(summary='更新动态视频',tags=['视频管理']),
-    partial_update=extend_schema(summary='部分更新动态视频',tags=['视频管理']),
-    destroy=extend_schema(summary='删除动态视频',tags=['视频管理'])
+    retrieve=extend_schema(summary='获取动态视频详情',tags=['社区动态']),
+    create=extend_schema(summary='创建动态视频',tags=['社区动态']),
+    update=extend_schema(summary='更新动态视频',tags=['社区动态']),
+    partial_update=extend_schema(summary='部分更新动态视频',tags=['社区动态']),
+    destroy=extend_schema(summary='删除动态视频',tags=['社区动态'])
 )
 class DynamicViewSet(BaseViewSet):
     queryset = Dynamic.objects.all()

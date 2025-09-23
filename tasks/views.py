@@ -1,4 +1,7 @@
+
 from rest_framework import viewsets
+
+from middleware.utils import ApiResponse
 from tasks.models import Reward, Template
 from tasks.serializers import TaskRewardSerializer, TaskTemplateSerializer
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
@@ -18,6 +21,10 @@ from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiPara
 class RewardViewSet(viewsets.ModelViewSet):
     queryset = Reward.objects.all()
     serializer_class = TaskRewardSerializer
+    # def get(self,request, *args, **kwargs):
+    #     ser = TaskRewardSerializer(instance=queryset, many=True)
+    #
+    #     return ApiResponse(ser)
 
 @extend_schema_view(
     list=extend_schema(summary='获取任务模板列表（分页)',tags=['任务模板管理'],
@@ -33,3 +40,12 @@ class RewardViewSet(viewsets.ModelViewSet):
 class TemplateViewSet(viewsets.ModelViewSet):
     queryset = Template.objects.all()
     serializer_class = TaskTemplateSerializer
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        ser = TaskTemplateSerializer(instance=queryset, many=True)
+        return ApiResponse(code=200, data=ser.data, message="任务模板列表获取成功")
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        ser = TaskTemplateSerializer(instance=instance)
+        return ApiResponse(code=200, data=ser.data, message="任务模板详情获取成功")
