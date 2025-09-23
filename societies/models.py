@@ -40,7 +40,7 @@ class Dynamic(models.Model):
     status = models.CharField(max_length=255, blank=True, null=True)
     create_time = models.DateTimeField(auto_now_add=True)
     update_time = models.DateTimeField(auto_now=True)
-
+    view_count = models.IntegerField(blank=True, null=True, default=0)
 
     class Meta:
         db_table = 't_social_dynamic'
