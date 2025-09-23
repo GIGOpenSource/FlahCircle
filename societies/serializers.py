@@ -8,3 +8,4 @@ class SocialDynamicSerializer(serializers.ModelSerializer):
     class Meta:
         model = Dynamic
         fields = '__all__'
+

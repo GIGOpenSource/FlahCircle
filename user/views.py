@@ -4,6 +4,8 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status, generics, permissions, viewsets
 from rest_framework.authtoken.views import ObtainAuthToken
 from django.contrib.auth import get_user_model
+
+from middleware.base_views import BaseViewSet
 from .serializers import UserRegisterSerializer, UserLoginSerializer, UserSerializer, GroupSerializer
 from rest_framework.authtoken.models import Token
 from middleware.utils import ApiResponse
@@ -34,6 +36,7 @@ class RegisterView(generics.CreateAPIView):
             return ApiResponse(data={
                 'user_id': user.id,
                 'username': user.username,
+                'user_nickname': user.user_nickname,
                 'token': token.key
             })
         return ApiResponse(code=400, message=serializer.errors)
@@ -41,7 +44,6 @@ class RegisterView(generics.CreateAPIView):
 @extend_schema(tags=["用户管理"])
 class CustomLoginView(ObtainAuthToken):
     permission_classes = [permissions.AllowAny]
-
     @extend_schema(
         operation_id="user-login",
         summary="用户登录",
@@ -71,94 +73,51 @@ class CustomLoginView(ObtainAuthToken):
 
 @extend_schema(tags=["用户管理"])
 @extend_schema_view(
-    list=extend_schema(
-        summary="获取用户列表",
-        description="返回系统所有用户，仅管理员可访问",
-        responses={200: UserSerializer(many=True)}
+    list=extend_schema(summary="获取用户列表",responses={200: UserSerializer(many=True)}
     ),
-    retrieve=extend_schema(
-        summary="获取用户详情",
-        description="根据ID获取用户详情，管理员可查看所有，用户可查看自己",
-        responses={200: UserSerializer, 404: "用户不存在"}
+    retrieve=extend_schema(summary="获取用户详情",responses={200: UserSerializer, 404: "用户不存在"}
     ),
     update=extend_schema(
-        summary="全量更新用户",
-        description="全量更新用户信息，管理员可更新所有，用户可更新自己",
-        request=UserSerializer
-    ),
-    partial_update=extend_schema(
-        summary="部分更新用户",
-        description="部分更新用户信息，管理员可更新所有，用户可更新自己",
-        request=UserSerializer
-    ),
-    destroy=extend_schema(
-        summary="删除用户",
-        description="删除指定用户，仅管理员可操作",
-        responses={204: "删除成功", 404: "用户不存在"}
+        summary="更新用户",description="通过id除username都可变",request=UserSerializer),
+    partial_update=extend_schema(summary="部分更新用户",request=UserSerializer),
+    destroy=extend_schema(summary="删除用户",description="删除指定用户，仅管理员可操作",responses={204: "删除成功", 404: "用户不存在"}
     )
 )
-class UserViewSet(viewsets.ModelViewSet):
+class UserViewSet(BaseViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-
-    def get_permissions(self):
-        """动态权限控制"""
-        if self.action in ['list', 'destroy']:
-            # 列表和删除仅管理员可操作
-            return [permissions.IsAdminUser()]
-        # 其他操作需要登录（本人或管理员）
-        return [permissions.IsAuthenticated()]
-
+    # def get_permissions(self):
+    #     """动态权限控制"""
+    #     if self.action in ['list', 'destroy']:
+    #         # 列表和删除仅管理员可操作
+    #         return [permissions.IsAdminUser()]
+    #     # 其他操作需要登录（本人或管理员）
+    #     return [permissions.IsAuthenticated()]
     def get_queryset(self):
         """数据权限过滤"""
         user = self.request.user
-        if user.is_admin_role():  # 使用模型中定义的管理员判断方法
-            return User.objects.all()
-        return User.objects.filter(id=user.id)  # 普通用户仅能查看自己
-
-    def check_object_permissions(self, request, obj):
-        """对象级权限检查"""
-        if request.user.is_admin_role():
-            return True
-        return obj == request.user  # 普通用户仅能操作自己
-
+        # if user.is_admin_role():  # 使用模型中定义的管理员判断方法
+        #     return User.objects.all()
+        return User.objects.all()
+        # return User.objects.filter(id=user.id)  # 普通用户仅能查看自己
+    # def check_object_permissions(self, request, obj):
+    #     """对象级权限检查"""
+    #     if request.user.is_admin_role():
+    #         return True
+    #     return obj == request.user  # 普通用户仅能操作自己
 
 # 新增用户组管理视图集
 @extend_schema(tags=["用户组管理"])
 @extend_schema_view(
-    list=extend_schema(
-        summary="获取用户组列表",
-        description="返回所有用户组，仅管理员可访问",
-        responses={200: GroupSerializer(many=True)}
-    ),
-    create=extend_schema(
-        summary="创建用户组",
-        description="创建新用户组，仅管理员可操作",
-        request=GroupSerializer,
-        responses={201: GroupSerializer}
-    ),
-    retrieve=extend_schema(
-        summary="获取用户组详情",
-        description="根据ID获取用户组详情，仅管理员可访问",
-        responses={200: GroupSerializer, 404: "用户组不存在"}
-    ),
-    update=extend_schema(
-        summary="全量更新用户组",
-        description="全量更新用户组信息，仅管理员可操作",
-        request=GroupSerializer
-    ),
-    partial_update=extend_schema(
-        summary="部分更新用户组",
-        description="部分更新用户组信息，仅管理员可操作",
-        request=GroupSerializer
-    ),
-    destroy=extend_schema(
-        summary="删除用户组",
-        description="删除指定用户组，仅管理员可操作",
-        responses={204: "删除成功", 404: "用户组不存在"}
+    list=extend_schema(summary="获取用户组列表",description="返回所有用户组，仅管理员可访问",responses={200: GroupSerializer(many=True)}),
+    create=extend_schema(summary="创建用户组",request=GroupSerializer,responses={201: GroupSerializer}),
+    retrieve=extend_schema(summary="获取用户组详情",responses={200: GroupSerializer, 404: "用户组不存在"}),
+    update=extend_schema(summary="全量更新用户组",request=GroupSerializer),
+    partial_update=extend_schema(summary="部分更新用户组",request=GroupSerializer),
+    destroy=extend_schema(summary="删除用户组",description="删除指定用户组，仅管理员可操作",responses={204: "删除成功", 404: "用户组不存在"}
     )
 )
-class GroupViewSet(viewsets.ModelViewSet):
+class GroupViewSet(BaseViewSet):
     queryset = Group.objects.all()
     serializer_class = GroupSerializer
     permission_classes = [permissions.IsAdminUser]  # 仅管理员可操作用户组
