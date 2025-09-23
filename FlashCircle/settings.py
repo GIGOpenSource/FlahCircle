@@ -118,7 +118,7 @@ SPECTACULAR_SETTINGS = {
     'TITLE': 'FlashCicle 管理 API',
     'DESCRIPTION': '简化版后端接口文档（中文）',
     'VERSION': '1.0.0',
-    'SERVE_INCLUDE_SCHEMA': False,
+    'SERVE_INCLUDE_SCHEMA': True,
 }
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases

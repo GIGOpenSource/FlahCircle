@@ -3,7 +3,7 @@ from rest_framework import viewsets, filters
 from rest_framework.decorators import action
 
 from contents.models import Content
-from contents.serializers import ContentSerializer
+from contents.serializers import ContentSerializer, ContentWithFollowSerializer
 from middleware.base_views import BaseViewSet
 from drf_spectacular.utils import extend_schema_view, extend_schema, OpenApiParameter
 
@@ -86,12 +86,12 @@ class ContentViewSet(BaseViewSet):
         # 获取分页器实例
         page = self.paginate_queryset(queryset)
         if page is not None:
-            serializer = ContentSerializer(page, many=True, context=context_data)
+            serializer = ContentWithFollowSerializer(page, many=True, context=context_data)
             # 使用自定义分页响应
             return self.get_paginated_response(serializer.data)
 
         # 如果没有分页，返回普通响应
-        serializer = ContentSerializer(queryset, many=True, context=context_data)
+        serializer = ContentWithFollowSerializer(queryset, many=True, context=context_data)
         return ApiResponse(serializer.data)
 
     def retrieve(self, request, *args, **kwargs):
@@ -101,7 +101,7 @@ class ContentViewSet(BaseViewSet):
         context_data = self.get_user_context_data(request)
 
         # 使用序列化器
-        serializer = ContentSerializer(instance, context=context_data)
+        serializer = ContentWithFollowSerializer(instance, context=context_data)
         return ApiResponse(serializer.data)
 
     @extend_schema(
@@ -136,10 +136,10 @@ class ContentViewSet(BaseViewSet):
         # 应用分页
         page = self.paginate_queryset(queryset_list)
         if page is not None:
-            serializer = ContentSerializer(page, many=True, context=context_data)
+            serializer = ContentWithFollowSerializer(page, many=True, context=context_data)
             return self.get_paginated_response(serializer.data)
 
-        serializer = ContentSerializer(queryset_list, many=True, context=context_data)
+        serializer = ContentWithFollowSerializer(queryset_list, many=True, context=context_data)
         return ApiResponse(serializer.data)
 
     @action(detail=False, methods=['post'], url_path='share')
