@@ -14,10 +14,9 @@ class User(AbstractUser):
     phone = models.CharField(max_length=11, blank=True, null=True, unique=True)
     avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
     member_level = models.CharField(max_length=10, choices=MEMBER_LEVEL, default='normal')
-    bio = models.TextField(blank=True, null=True, verbose_name="个人简介")  # 新增个人简介
-    nickname = models.CharField(max_length=50, blank=True, null=True, verbose_name="昵称", unique=True)
-    # username 可更改且必填
-    username = models.CharField(max_length=150, unique=True, verbose_name="用户名")
+    user_bio = models.TextField(blank=True, null=True, verbose_name="个人简介")  # 新增个人简介
+    user_nickname = models.CharField(max_length=50, blank=True, null=True, verbose_name="昵称")
+
     # 关注和粉丝数量可以通过关系计算，但为了性能考虑可以添加缓存字段
     followers_count = models.PositiveIntegerField(default=0, verbose_name="粉丝数量")
     following_count = models.PositiveIntegerField(default=0, verbose_name="关注数量")
@@ -42,25 +41,9 @@ class User(AbstractUser):
         db_table = 'custom_user'
 
     def save(self, *args, **kwargs):
-        # 如果是新建用户且没有 nickname，则自动生成
-        if not self.nickname:
-            # 生成自增的 nickname
-            last_user = User.objects.order_by('-id').first()
-            if last_user and last_user.nickname and last_user.nickname.startswith('user_'):
-                try:
-                    last_number = int(last_user.nickname.split('_')[1])
-                    next_number = last_number + 1
-                except (ValueError, IndexError):
-                    next_number = 1
-            else:
-                next_number = 1
-
-            self.nickname = f"user_{next_number:06d}"  # 格式如 user_000001
-
-            # 确保 nickname 唯一性（以防万一）
-            while User.objects.filter(nickname=self.nickname).exists():
-                next_number += 1
-                self.nickname = f"user_{next_number:06d}"
+        # 如果没有昵称，生成默认昵称
+        if not self.user_nickname:
+            self.user_nickname = f"小知了{get_random_string(10, '0123456789abcdefghijklmnopqrstuvwxyz')}"
 
         super().save(*args, **kwargs)
 
