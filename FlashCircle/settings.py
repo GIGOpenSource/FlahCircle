@@ -56,7 +56,7 @@ INSTALLED_APPS = [
     'societies',
     'tags',
     'tasks',
-
+    'comments'
 ]
 
 MIDDLEWARE = [

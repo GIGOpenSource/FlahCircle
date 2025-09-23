@@ -38,5 +38,6 @@ urlpatterns = [
     path('api/social/', include('payments.urls')),
     path('api/tags/', include('tags.urls')),
     path('api/tasks/', include('tasks.urls')),
+    path('api/comments/', include('comments.urls')),
 ]
 
