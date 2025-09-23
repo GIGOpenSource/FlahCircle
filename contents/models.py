@@ -2,6 +2,10 @@ from django.db import models
 
 # 用于首页短视频 / 发现页长视频表
 class Content(models.Model):
+    DYNAMIC_TYPES = (
+        ('short', '短视频'),
+        ('long', '长视频'),
+    )
     title = models.CharField(max_length=255, blank=True, null=True)
     description = models.CharField(max_length=255, blank=True, null=True)
     type = models.CharField(max_length=255, blank=True, null=True)

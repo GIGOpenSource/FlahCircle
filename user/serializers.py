@@ -4,6 +4,8 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.models import Group
 
+from societies.models import Dynamic
+
 User = get_user_model()
 
 class GroupSerializer(serializers.ModelSerializer):

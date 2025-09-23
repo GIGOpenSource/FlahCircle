@@ -9,9 +9,21 @@ class Dynamic(models.Model):
         ('video', '视频'),
         ('dynamic', '动态'),
     )
+    TABS_CHOICES = (
+        ('follow', '关注'),
+        ('latest', '最新'),
+        ('recommend', '推荐'),
+        ('cashback', '发现'),
+        ('selected', '精选'),
+    )
     content = models.TextField(blank=True, null=True)
     title = models.CharField(max_length=255, blank=True, null=True)
-    tabs = models.CharField(max_length=255, blank=True, null=True)
+    tabs = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        choices=TABS_CHOICES  # 关联定义的选项
+    )
     type = models.CharField(max_length=255, choices=DYNAMIC_TYPES,blank=True, null=True)
     images = models.JSONField(blank=True, null=True, help_text="图片URL数组，例如: ['url1', 'url2']")
     video_url = models.JSONField(blank=True, null=True)
@@ -23,6 +35,7 @@ class Dynamic(models.Model):
     user_avatar = models.CharField(max_length=255, blank=True, null=True)
     like_count = models.IntegerField(default=0)
     comment_count = models.IntegerField(default=0)
+    favorite_count = models.IntegerField(default=0)
     share_count = models.IntegerField(default=0)
     status = models.CharField(max_length=255, blank=True, null=True)
     create_time = models.DateTimeField(auto_now_add=True)
