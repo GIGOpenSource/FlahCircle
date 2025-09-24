@@ -161,10 +161,10 @@ class ContentFavoriteViewSet(BaseViewSet):
 @extend_schema_view(
     list=extend_schema(summary='获取内容收藏', tags=['收藏管理']),
     retrieve=extend_schema(summary='获取内容收藏详情', tags=['收藏管理']),
-    create=extend_schema(summary='创建内容收藏', tags=['收藏管理']),
-    update=extend_schema(summary='更新内容收藏', tags=['收藏管理']),
-    partial_update=extend_schema(summary='部分更新内容收藏', tags=['收藏管理']),
-    destroy=extend_schema(summary='删除内容收藏', tags=['收藏管理'])
+    # create=extend_schema(summary='创建内容收藏', tags=['收藏管理']),
+    # update=extend_schema(summary='更新内容收藏', tags=['收藏管理']),
+    # partial_update=extend_schema(summary='部分更新内容收藏', tags=['收藏管理']),
+    # destroy=extend_schema(summary='删除内容收藏', tags=['收藏管理'])
 )
 class ContentFavoriteViewSet(BaseViewSet):
     queryset = Favorite.objects.all()

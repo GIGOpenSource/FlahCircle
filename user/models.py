@@ -20,6 +20,7 @@ class User(AbstractUser):
     followers_count = models.PositiveIntegerField(default=0, verbose_name="粉丝数量")
     following_count = models.PositiveIntegerField(default=0, verbose_name="关注数量")
     likes_count = models.PositiveIntegerField(default=0, verbose_name="获赞数量")
+    is_vip = models.BooleanField(default=True, verbose_name="用户是否为vip")
     # 保留Django内置的groups和user_permissions用于分组权限
     groups = models.ManyToManyField(
         Group,

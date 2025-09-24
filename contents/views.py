@@ -123,16 +123,12 @@ class ContentViewSet(BaseViewSet):
         count = int(request.query_params.get('count', 50))
         # 限制最大返回数量
         count = min(count, 100)
-
         # 获取随机数据，限制总数
         queryset = Content.objects.all().order_by('?')[:count]
-
         # 转换为列表以支持分页（因为切片后的QuerySet不支持进一步的分页操作）
         queryset_list = list(queryset)
-
         # 获取当前用户的相关数据
         context_data = self.get_user_context_data(request)
-
         # 应用分页
         page = self.paginate_queryset(queryset_list)
         if page is not None:
@@ -149,10 +145,8 @@ class ContentViewSet(BaseViewSet):
         传入内容ID，增加该内容的share_count
         """
         content_id = request.data.get('id')
-
         if not content_id:
             return ApiResponse(code=400, message="缺少内容ID参数")
-
         try:
             content = Content.objects.get(id=content_id)
             content.share_count = (content.share_count or 0) + 1

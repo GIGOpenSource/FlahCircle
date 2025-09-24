@@ -7,9 +7,9 @@ router = DefaultRouter()
 
 
 # ContentFavoriteViewSet 内容收藏
-router.register(r'v1/', ContentFavoriteViewSet, basename='content-favorite')
+router.register(r'v1', ContentFavoriteViewSet, basename='content-favorite')
 # DynamicFavoriteViewSet 动态收藏
-router.register(r'v2/', DynamicFavoriteViewSet, basename='dynamic-favorite')
+router.register(r'v2', DynamicFavoriteViewSet, basename='dynamic-favorite')
 
 urlpatterns = [
     path('', include(router.urls)),

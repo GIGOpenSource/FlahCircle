@@ -220,10 +220,9 @@ class FollowedDynamicViewSet(BaseViewSet):
 class InteractionMessageViewSet(BaseViewSet):
     """
     互动消息ViewSet
-    获取用户的点赞和评论互动消息
+    获取用户的点赞 和 评论互动消息
     """
     pagination_class = CustomPagination
-
     def get_user_context_data(self, request):
         """获取当前用户的相关数据"""
         context_data = {
@@ -298,16 +297,9 @@ class InteractionMessageViewSet(BaseViewSet):
                     'user_avatar': like.user_avatar,
                     'target_id': like.target_id,
                     'target_title': like.target_title or dynamic.title,
-                    'target_content': getattr(dynamic, 'content', '')[:100] + '...' if getattr(dynamic, 'content',
-                                                                                               '') else '',
+                    'target_content': getattr(dynamic, 'content', '')[:100] + '...' if getattr(dynamic, 'content','') else '',
                     'create_time': like.create_time,
-                    'dynamic': {
-                        'id': dynamic.id,
-                        'title': dynamic.title,
-                        'user_id': dynamic.user_id,
-                        'user_nickname': dynamic.user_nickname,
-                        'user_avatar': dynamic.user_avatar,
-                    }
+                    'dynamic': SocialDynamicSerializer(dynamic).data
                 })
             except Dynamic.DoesNotExist:
                 continue
@@ -326,13 +318,7 @@ class InteractionMessageViewSet(BaseViewSet):
                     'target_title': dynamic.title,
                     'target_content': comment.content[:100] + '...' if comment.content else '',
                     'create_time': comment.create_time,
-                    'dynamic': {
-                        'id': dynamic.id,
-                        'title': dynamic.title,
-                        'user_id': dynamic.user_id,
-                        'user_nickname': dynamic.user_nickname,
-                        'user_avatar': dynamic.user_avatar,
-                    }
+                    'dynamic': SocialDynamicSerializer(dynamic).data
                 })
             except Dynamic.DoesNotExist:
                 continue

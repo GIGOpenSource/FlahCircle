@@ -75,7 +75,7 @@ class CustomLoginView(ObtainAuthToken):
 @extend_schema_view(
     list=extend_schema(summary="获取用户列表",responses={200: UserSerializer(many=True)}
     ),
-    retrieve=extend_schema(summary="获取用户详情",responses={200: UserSerializer, 404: "用户不存在"}
+    retrieve=extend_schema(summary="获取用户详情,返回是否关注，房间session",responses={200: UserSerializer, 404: "用户不存在"}
     ),
     update=extend_schema(
         summary="更新用户",description="通过id除username都可变",request=UserSerializer),
@@ -86,25 +86,12 @@ class CustomLoginView(ObtainAuthToken):
 class UserViewSet(BaseViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    # def get_permissions(self):
-    #     """动态权限控制"""
-    #     if self.action in ['list', 'destroy']:
-    #         # 列表和删除仅管理员可操作
-    #         return [permissions.IsAdminUser()]
-    #     # 其他操作需要登录（本人或管理员）
-    #     return [permissions.IsAuthenticated()]
     def get_queryset(self):
         """数据权限过滤"""
         user = self.request.user
-        # if user.is_admin_role():  # 使用模型中定义的管理员判断方法
-        #     return User.objects.all()
         return User.objects.all()
-        # return User.objects.filter(id=user.id)  # 普通用户仅能查看自己
-    # def check_object_permissions(self, request, obj):
-    #     """对象级权限检查"""
-    #     if request.user.is_admin_role():
-    #         return True
-    #     return obj == request.user  # 普通用户仅能操作自己
+
+
 
 # 新增用户组管理视图集
 @extend_schema(tags=["用户组管理"])

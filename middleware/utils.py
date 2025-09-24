@@ -32,7 +32,7 @@ class CustomPagination(PageNumberPagination):
     page_size = 20  # 默认每页条数
     page_query_param = 'currentPage'  # 关键：匹配前端的 "currentPage" 参数（指定页码）
     page_size_query_param = 'pageSize'  # 匹配前端的 "pageSize" 参数（指定每页条数）
-    max_page_size = 100  # 最大每页条数限制
+    max_page_size = 999  # 最大每页条数限制
 
     def get_paginated_response(self, data):
         print("分页查询")

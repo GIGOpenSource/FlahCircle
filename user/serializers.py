@@ -1,9 +1,10 @@
-# user/serializers.py
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.models import Group
 
+from chat.models import Session
+from follows.models import Follow
 from societies.models import Dynamic
 
 User = get_user_model()
@@ -26,14 +27,48 @@ class UserSerializer(serializers.ModelSerializer):
         required=False,
         help_text="用户组ID列表"
     )  # 用于修改用户所属组
-
+    is_follower = serializers.SerializerMethodField()
+    session_id = serializers.SerializerMethodField()
     class Meta:
         model = User
         fields = [
-            'id', 'username', 'user_nickname', 'email', 'phone', 'avatar',
-            'member_level', 'user_bio', 'groups', 'group_ids', 'date_joined'
+            'id', 'username', 'user_nickname', 'email', 'phone', 'avatar','likes_count','following_count','followers_count',
+            'member_level', 'user_bio', 'groups', 'group_ids', 'date_joined', 'session_id', 'is_follower','is_vip'
         ]
         read_only_fields = ['id', 'username', 'date_joined']
+
+    def get_is_follower(self, obj):
+        """
+        获取当前登录用户是否关注了该用户
+        """
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            # 检查当前登录用户(request.user)是否关注了该用户(obj)
+            return Follow.objects.filter(
+                follower_id=request.user.id,
+                followee_id=obj.id,
+                status='active'
+            ).exists()
+        return False
+
+    def get_session_id(self, obj):
+        """
+        获取当前登录用户与该用户之间的会话ID
+        如果存在会话则返回session_id，否则返回None
+        """
+        request = self.context.get('request')
+        if request and request.user.is_authenticated and request.user.id != obj.id:
+            try:
+                from django.db.models import Q
+                # 获取当前登录用户(request.user)与该用户(obj)之间的会话ID
+                session = Session.objects.get(
+                    Q(user_id=request.user.id, other_user_id=obj.id) |
+                    Q(user_id=obj.id, other_user_id=request.user.id)
+                )
+                return session.session_id
+            except Session.DoesNotExist:
+                return None
+        return None
 
     def update(self, instance, validated_data):
         # 允许更新除 username 外的所有字段

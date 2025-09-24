@@ -4,23 +4,17 @@ from comments.models import Comment
 from comments.serializers import CommentSerializer
 from drf_spectacular.utils import extend_schema_view, extend_schema, OpenApiParameter
 
+from contents.models import Content
 from middleware.base_views import BaseViewSet
-from middleware.utils import ApiResponse
+from middleware.utils import ApiResponse, CustomPagination
+from societies.models import Dynamic
 
 
-@extend_schema_view(
-    list=extend_schema(summary='获取评论列表', tags=['评论管理'],
-                       parameters=[OpenApiParameter(name='target_id', description='目标ID过滤', type=int)]
-                       ),
-    # retrieve=extend_schema(summary='获取评论详情', tags=['评论管理']),
-    create=extend_schema(summary='创建评论', tags=['评论管理']),
-    # update=extend_schema(summary='更新评论', tags=['评论管理']),
-    # partial_update=extend_schema(summary='部分更新评论', tags=['评论管理']),
-    destroy=extend_schema(summary='删除评论', tags=['评论管理'])
-)
+
 class CommentViewSet(BaseViewSet):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
+    pagination_class = CustomPagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['target_id', 'type', 'parent_comment_id']
     search_fields = ['content', 'user_nickname']
@@ -42,3 +36,84 @@ class CommentViewSet(BaseViewSet):
         instance = self.get_object()
         self.perform_destroy(instance)
         return ApiResponse(message="评论删除成功")
+
+    def list(self, request, *args, **kwargs):
+        # 获取过滤后的查询集
+        queryset = self.filter_queryset(self.get_queryset())
+        # 获取分页器实例
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            # 使用自定义分页响应
+            return self.get_paginated_response(serializer.data)
+        # 如果没有分页，返回普通响应
+        serializer = self.get_serializer(queryset, many=True)
+        return ApiResponse(serializer.data)
+
+
+@extend_schema_view(
+    list=extend_schema(summary='获取内容评论列表', tags=['内容评论管理']),
+    create=extend_schema(summary='创建内容评论', tags=['内容评论管理']),
+    destroy=extend_schema(summary='删除内容评论', tags=['内容评论管理'])
+)
+class ContentCommentViewSet(CommentViewSet):
+    """
+    专门处理内容评论的ViewSet
+    """
+
+    def perform_create(self, serializer):
+        # 保存评论并更新Content的comment_count
+        comment = serializer.save(user_id=self.request.user.id, type='content')
+        # 更新Content表的comment_count
+        try:
+            content = Content.objects.get(id=comment.target_id)
+            content.comment_count = content.comment_count + 1
+            content.save(update_fields=['comment_count'])
+        except Content.DoesNotExist:
+            pass
+    def perform_destroy(self, instance):
+        # 减少Content表的comment_count
+        target_id = instance.target_id
+        super().perform_destroy(instance)
+
+        try:
+            content = Content.objects.get(id=target_id)
+            content.comment_count = max(0, content.comment_count - 1)
+            content.save(update_fields=['comment_count'])
+        except Content.DoesNotExist:
+            pass
+
+
+@extend_schema_view(
+    list=extend_schema(summary='获取动态评论列表', tags=['动态评论管理']),
+    create=extend_schema(summary='创建动态评论', tags=['动态评论管理']),
+    destroy=extend_schema(summary='删除动态评论', tags=['动态评论管理'])
+)
+class DynamicCommentViewSet(CommentViewSet):
+    """
+    专门处理动态评论的ViewSet
+    """
+
+    def perform_create(self, serializer):
+        # 保存评论并更新Dynamic的comment_count
+        comment = serializer.save(user_id=self.request.user.id, type='dynamic')
+
+        # 更新Dynamic表的comment_count
+        try:
+            dynamic = Dynamic.objects.get(id=comment.target_id)
+            dynamic.comment_count = dynamic.comment_count + 1
+            dynamic.save(update_fields=['comment_count'])
+        except Dynamic.DoesNotExist:
+            pass
+
+    def perform_destroy(self, instance):
+        # 减少Dynamic表的comment_count
+        target_id = instance.target_id
+        super().perform_destroy(instance)
+
+        try:
+            dynamic = Dynamic.objects.get(id=target_id)
+            dynamic.comment_count = max(0, dynamic.comment_count - 1)
+            dynamic.save(update_fields=['comment_count'])
+        except Dynamic.DoesNotExist:
+            pass

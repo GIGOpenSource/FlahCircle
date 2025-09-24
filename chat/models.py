@@ -13,7 +13,7 @@ class Message(models.Model):
         ('system', '系统消息'),
     )
     sender_id = models.IntegerField(blank=True, null=True)
-    receiver_id = models.CharField(max_length=255, blank=True, null=True, verbose_name="房间ID")
+    receiver_id = models.CharField(max_length=255, blank=True, null=True, verbose_name="房间号ID")
     content = models.TextField(blank=True, null=True)
     type = models.CharField(max_length=255, choices=MESSAGE_TYPES, default='text')
     extra_data = models.JSONField(blank=True, null=True)

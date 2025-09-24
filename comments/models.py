@@ -5,8 +5,18 @@ from user.models import User
 
 
 class Comment(models.Model):
+    TABS_CHOICES = (
+        ('latest', '最新'),
+        ('recommend', '推荐'),
+    )
     type = models.CharField(max_length=255, blank=True, null=True)
     target_id = models.IntegerField(blank=True, null=True)
+    tabs = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        choices=TABS_CHOICES
+    )
     parent_comment_id = models.IntegerField(blank=True, null=True)
     content = models.TextField(blank=True, null=True)
     user_id = models.IntegerField(blank=True, null=True)
@@ -26,9 +36,6 @@ class Comment(models.Model):
         ordering = ['create_time']
 
     def save(self, *args, **kwargs):
-        # 检查是否是新建评论
-        is_new = self.pk is None
-
         # 自动填充用户信息
         if self.user_id and (not self.user_nickname or not self.user_avatar):
             try:
@@ -40,23 +47,5 @@ class Comment(models.Model):
 
         super().save(*args, **kwargs)
 
-        # 如果是新建评论且target_id存在，增加Dynamic的comment_count
-        if is_new and self.target_id:
-            try:
-                dynamic = Dynamic.objects.get(id=self.target_id)
-                dynamic.comment_count = dynamic.comment_count + 1
-                dynamic.save(update_fields=['comment_count'])
-            except Dynamic.DoesNotExist:
-                pass
-
     def delete(self, *args, **kwargs):
-        # 如果target_id存在，减少Dynamic的comment_count
-        if self.target_id:
-            try:
-                dynamic = Dynamic.objects.get(id=self.target_id)
-                dynamic.comment_count = max(0, dynamic.comment_count - 1)
-                dynamic.save(update_fields=['comment_count'])
-            except Dynamic.DoesNotExist:
-                pass
-
         super().delete(*args, **kwargs)

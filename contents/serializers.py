@@ -21,11 +21,11 @@ class ContentSerializer(serializers.ModelSerializer):
         if not isinstance(value, (int, float)) or value is None:
             return value
         if value >= 10000000:  # 1000万
-            return f"{value / 10000000:.1f}kw".replace('.0', '')
+            return f"{value / 10000000:.1f}千万".replace('.0', '')
         elif value >= 10000:  # 1万
-            return f"{value / 10000:.1f}w".replace('.0', '')
+            return f"{value / 10000:.1f}万".replace('.0', '')
         elif value >= 1000:  # 1千
-            return f"{value / 1000:.1f}k".replace('.0', '')
+            return f"{value / 1000:.1f}千".replace('.0', '')
         else:
             return value
 
@@ -56,11 +56,11 @@ class ContentWithFollowSerializer(serializers.ModelSerializer):
             return value
 
         if value >= 10000000:  # 1000万
-            return f"{value / 10000000:.1f}kw".replace('.0', '')
+            return f"{value / 10000000:.1f}千万".replace('.0', '')
         elif value >= 10000:  # 1万
-            return f"{value / 10000:.1f}w".replace('.0', '')
+            return f"{value / 10000:.1f}万".replace('.0', '')
         elif value >= 1000:  # 1千
-            return f"{value / 1000:.1f}k".replace('.0', '')
+            return f"{value / 1000:.1f}千".replace('.0', '')
         else:
             return value
 
