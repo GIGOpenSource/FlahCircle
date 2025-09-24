@@ -16,7 +16,7 @@ class CommentViewSet(BaseViewSet):
     serializer_class = CommentSerializer
     pagination_class = CustomPagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['target_id', 'type', 'parent_comment_id']
+    filterset_fields = ['target_id', 'type', 'parent_comment_id', 'tabs']
     search_fields = ['content', 'user_nickname']
     ordering_fields = ['create_time', 'like_count']
     ordering = ['-create_time']
