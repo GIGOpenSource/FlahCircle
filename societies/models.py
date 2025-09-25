@@ -1,3 +1,5 @@
+import uuid
+
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
 
@@ -16,13 +18,15 @@ class Dynamic(models.Model):
         ('cashback', '发现'),
         ('selected', '精选'),
     )
+    # 前缀的ID字段
+    prefixed_id = models.CharField(max_length=255, unique=True, blank=True, null=True)
     content = models.TextField(blank=True, null=True)
     title = models.CharField(max_length=255, blank=True, null=True)
     tabs = models.CharField(
         max_length=255,
         blank=True,
         null=True,
-        choices=TABS_CHOICES  # 关联定义的选项
+        choices=TABS_CHOICES
     )
     type = models.CharField(max_length=255, choices=DYNAMIC_TYPES,blank=True, null=True)
     images = models.JSONField(blank=True, null=True, help_text="图片URL数组，例如: ['url1', 'url2']")
@@ -47,6 +51,8 @@ class Dynamic(models.Model):
         ordering = ['-create_time']
 
     def save(self, *args, **kwargs):
+        if not self.prefixed_id:
+            self.prefixed_id = f"d_{uuid.uuid4().hex}"
         if self.user_id:
             try:
                 user = User.objects.get(id=self.user_id)

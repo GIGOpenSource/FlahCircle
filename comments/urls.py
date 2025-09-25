@@ -4,8 +4,8 @@ from comments.views import CommentViewSet, ContentCommentViewSet, DynamicComment
 
 router = DefaultRouter()
 
-router.register(r'v1/content', ContentCommentViewSet, basename='content-comment')
-router.register(r'v2/dynamic', DynamicCommentViewSet, basename='dynamic-comment')
+router.register(r'v1', ContentCommentViewSet, basename='content-comment')
+router.register(r'v2', DynamicCommentViewSet, basename='dynamic-comment')
 
 urlpatterns = [
     path('', include(router.urls)),

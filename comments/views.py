@@ -16,7 +16,7 @@ class CommentViewSet(BaseViewSet):
     serializer_class = CommentSerializer
     pagination_class = CustomPagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['target_id', 'type', 'parent_comment_id', 'tabs']
+    filterset_fields = ['target_id', 'type', 'parent_comment_id']
     search_fields = ['content', 'user_nickname']
     ordering_fields = ['create_time', 'like_count']
     ordering = ['-create_time']
@@ -39,6 +39,10 @@ class CommentViewSet(BaseViewSet):
 
     def list(self, request, *args, **kwargs):
         # 获取过滤后的查询集
+        # 检查是否提供了target_id参数
+        target_id = self.request.query_params.get('target_id', None)
+        if target_id is None:
+            return ApiResponse(code=400, message="缺少target_id参数")
         queryset = self.filter_queryset(self.get_queryset())
         # 获取分页器实例
         page = self.paginate_queryset(queryset)
@@ -52,9 +56,9 @@ class CommentViewSet(BaseViewSet):
 
 
 @extend_schema_view(
-    list=extend_schema(summary='获取内容评论列表', tags=['内容评论管理']),
-    create=extend_schema(summary='创建内容评论', tags=['内容评论管理']),
-    destroy=extend_schema(summary='删除内容评论', tags=['内容评论管理'])
+    list=extend_schema(summary='获取内容评论列表(必传target_id)只返回父级评论', tags=['内容评论管理(完成)']),
+    create=extend_schema(summary='创建内容评论', tags=['内容评论管理(完成)']),
+    destroy=extend_schema(summary='删除内容评论', tags=['内容评论管理(完成)'])
 )
 class ContentCommentViewSet(CommentViewSet):
     """
@@ -85,14 +89,24 @@ class ContentCommentViewSet(CommentViewSet):
 
 
 @extend_schema_view(
-    list=extend_schema(summary='获取动态评论列表', tags=['动态评论管理']),
-    create=extend_schema(summary='创建动态评论', tags=['动态评论管理']),
-    destroy=extend_schema(summary='删除动态评论', tags=['动态评论管理'])
+    list=extend_schema(summary='获取动态评论列表 （必传target_id）只返回父级评论', tags=['动态评论管理（完成）']),
+    create=extend_schema(summary='创建动态评论', tags=['动态评论管理（完成）']),
+    destroy=extend_schema(summary='删除动态评论', tags=['动态评论管理（完成）'])
 )
 class DynamicCommentViewSet(CommentViewSet):
     """
     专门处理动态评论的ViewSet
     """
+    def get_queryset(self):
+        """
+        默认只获取动态评论（type='dynamic'）和顶级评论（parent_comment_id=0）
+        """
+        queryset = super().get_queryset()
+        # 筛选type为dynamic的评论
+        queryset = queryset.filter(type='dynamic')
+        # 筛选顶级评论（parent_comment_id为0或None）
+        queryset = queryset.filter(parent_comment_id=0)
+        return queryset
 
     def perform_create(self, serializer):
         # 保存评论并更新Dynamic的comment_count

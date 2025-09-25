@@ -1,7 +1,9 @@
+import uuid
+
 from django.db import models
 from user.models import User
 
-# 用于首页短视频 / 发现页长视频表
+
 class Content(models.Model):
     DYNAMIC_TYPES = (
         ('short', '短视频'),
@@ -14,6 +16,8 @@ class Content(models.Model):
         ('cashback', '发现'),
         ('selected', '精选'),
     )
+    # 前缀id区分两张表业务
+    prefixed_id = models.CharField(max_length=255, unique=True, blank=True, null=True)
     title = models.CharField(max_length=255, blank=True, null=True)
     description = models.CharField(max_length=255, blank=True, null=True)
     type = models.CharField(max_length=255, choices=DYNAMIC_TYPES, blank=True, null=True)
@@ -39,6 +43,7 @@ class Content(models.Model):
     share_count = models.IntegerField(blank=True, null=True, default=0)
     score_count = models.IntegerField(blank=True, null=True, default=0)
     score_total = models.IntegerField(blank=True, null=True, default=0)
+    downvote_total = models.IntegerField(blank=True, null=True, default=0)
     publish_time = models.DateTimeField(blank=True, null=True)
     is_vip = models.BooleanField(default=False)
     is_permanent = models.BooleanField(default=False)
@@ -51,7 +56,10 @@ class Content(models.Model):
         ordering = ['-create_time']  # 修改为按创建时间倒序
 
     def save(self, *args, **kwargs):
-        # 修复字段名错误
+
+        if not self.prefixed_id:
+            self.prefixed_id = f"c_{uuid.uuid4().hex}"
+
         if self.author_id:
             try:
                 user = User.objects.get(id=self.author_id)

@@ -14,7 +14,8 @@ class Advertisement(models.Model):
     sort_order = models.IntegerField(blank=True, null=True, default=0)
     create_time = models.DateTimeField(auto_now_add=True)
     update_time = models.DateTimeField(auto_now=True)
-
+    price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, default=0.00)
+    is_vip = models.BooleanField(default=False)
     class Meta:
         db_table = 't_ad'
         ordering = ['create_time', 'name']

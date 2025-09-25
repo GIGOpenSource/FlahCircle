@@ -1,5 +1,8 @@
+from django.core.paginator import EmptyPage
+from rest_framework.exceptions import NotFound
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
+from rest_framework.views import exception_handler
 
 
 class ApiResponse(Response):
@@ -46,3 +49,49 @@ class CustomPagination(PageNumberPagination):
             },
             'results': data
         })
+
+    def paginate_queryset(self, queryset, request, view=None):
+        """
+        处理超出范围的页码请求
+        """
+        try:
+            return super().paginate_queryset(queryset, request, view=view)
+        except Exception as e:
+            # 捕获所有分页相关的异常
+            if "Invalid page" in str(e) or isinstance(e, EmptyPage):
+                # 当请求的页码无效时，返回空结果而不是抛出异常
+                self.request = request
+                # 创建一个空的分页结果
+                page_size = self.get_page_size(request) or self.page_size
+                from django.core.paginator import Paginator
+                empty_paginator = Paginator([], page_size)
+                self.page = empty_paginator.page(1)
+                return []
+            # 如果是其他异常，重新抛出
+            raise e
+
+def custom_exception_handler(exc, context):
+    """
+    自定义异常处理函数
+    """
+    # 调用默认的异常处理函数
+    response = exception_handler(exc, context)
+
+    # 如果是页面无效的错误，返回自定义响应
+    if isinstance(exc, NotFound) and ("Invalid page" in str(exc.detail) or "无效页面" in str(exc.detail)):
+        return ApiResponse(
+            data={
+                'pagination': {
+                    'page': 1,
+                    'page_size': 20,
+                    'total': 0,
+                    'total_pages': 0
+                },
+                'results': []
+            },
+            message="请求的页面超出范围，返回空结果",
+            code=200
+        )
+
+    # 对于其他异常，返回默认处理结果
+    return response

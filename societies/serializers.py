@@ -7,6 +7,7 @@ class SocialDynamicSerializer(serializers.ModelSerializer):
     class Meta:
         model = Dynamic
         fields = '__all__'
+        read_only_fields = ('prefixed_id',)
 
 class SocialDynamicWithFollowSerializer(serializers.ModelSerializer):
     is_follower = serializers.SerializerMethodField()

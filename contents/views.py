@@ -11,10 +11,11 @@ from middleware.utils import ApiResponse, CustomPagination
 
 
 @extend_schema_view(
-    list=extend_schema(summary='获取内容',tags=['内容'],
-        parameters=[OpenApiParameter(name='type', description='type字段过滤'),]
+    list=extend_schema(summary='获取内容列表 点赞收藏关注',tags=['内容'],
+        parameters=[OpenApiParameter(name='type', description='type字段过滤'),
+        OpenApiParameter(name='is_vip', description='是否vip视频 tf'),]
     ),
-    retrieve=extend_schema(summary='获取内容详情',tags=['内容']),
+    retrieve=extend_schema(summary='获取内容详情 点赞收藏关注',tags=['内容']),
     create=extend_schema(summary='创建内容',tags=['内容']),
     update=extend_schema(summary='更新内容',tags=['内容']),
     partial_update=extend_schema(summary='部分更新内容',tags=['内容']),
@@ -25,7 +26,7 @@ class ContentViewSet(BaseViewSet):
     serializer_class = ContentSerializer
     pagination_class = CustomPagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['type', 'tabs']
+    filterset_fields = ['type', 'tabs', 'is_vip',]
     search_fields = ['title', 'description']
     ordering_fields = ['create_time', 'update_time']
     ordering = ['-create_time']
@@ -138,23 +139,36 @@ class ContentViewSet(BaseViewSet):
         serializer = ContentWithFollowSerializer(queryset_list, many=True, context=context_data)
         return ApiResponse(serializer.data)
 
+    @extend_schema(
+        summary='分享内容',
+        tags=['内容']
+    )
     @action(detail=False, methods=['post'], url_path='share')
     def share(self, request):
         """
         分享内容接口
         传入内容ID，增加该内容的share_count
         """
+        # 从请求数据中获取内容ID
         content_id = request.data.get('id')
+
+        # 检查是否提供了内容ID
         if not content_id:
             return ApiResponse(code=400, message="缺少内容ID参数")
+
         try:
+            # 查找对应的内容对象
             content = Content.objects.get(id=content_id)
-            content.share_count = (content.share_count or 0) + 1
+            # 增加分享计数
+            content.share_count = content.share_count + 1
+            # 只更新share_count字段，提高性能
             content.save(update_fields=['share_count'])
+            # 返回更新后的分享计数
             return ApiResponse(
                 data={'share_count': content.share_count},
                 message="分享成功"
             )
         except Content.DoesNotExist:
+            # 如果内容不存在，返回错误信息
             return ApiResponse(code=400, message="内容不存在")
 

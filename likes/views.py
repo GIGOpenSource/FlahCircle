@@ -15,7 +15,7 @@ class DynamicLikeViewSet(BaseViewSet):
     serializer_class = LikeSerializer
 
     @extend_schema(
-        summary='点赞/取消点赞切换',
+        summary='动态点赞/取消点赞切换',
         tags=['点赞管理'],
         request=LikeToggleSerializer,
         responses={200: LikeSerializer}
@@ -39,6 +39,7 @@ class DynamicLikeViewSet(BaseViewSet):
 
         # 查找是否已有点赞记录
         like, created = Like.objects.get_or_create(
+            type='dynamic',
             target_id=target_id,
             user_id=user_id,
             defaults={

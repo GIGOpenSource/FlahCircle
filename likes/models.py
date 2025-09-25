@@ -1,4 +1,6 @@
 from django.db import models
+
+from contents.models import Content
 from societies.models import Dynamic
 from user.models import User
 
@@ -47,6 +49,13 @@ class Like(models.Model):
                 self.target_title = dynamic.title
             except Dynamic.DoesNotExist:
                 pass
+        elif self.type == 'content' and self.target_id and not self.target_title:
+            try:
+                content = Content.objects.get(id=self.target_id)
+                self.target_author_id = content.author_id
+                self.target_title = content.title
+            except Content.DoesNotExist:
+                pass
 
         # 检查是否是状态更新
         old_status = None
@@ -59,16 +68,22 @@ class Like(models.Model):
 
         super().save(*args, **kwargs)
 
-        # 只有在状态发生变化时才更新Dynamic的like_count
-        if self.type == 'dynamic' and self.target_id and old_status != self.status:
+        # 只有在状态发生变化时才更新目标对象的like_count
+        if self.target_id and old_status != self.status:
             try:
-                dynamic = Dynamic.objects.get(id=self.target_id)
+                if self.type == 'dynamic':
+                    target = Dynamic.objects.get(id=self.target_id)
+                elif self.type == 'content':
+                    target = Content.objects.get(id=self.target_id)
+                else:
+                    return
+
                 if self.status == 'active' and old_status != 'active':
                     # 点赞，增加计数
-                    dynamic.like_count = dynamic.like_count + 1
+                    target.like_count = target.like_count + 1
                 elif self.status == 'inactive' and old_status == 'active':
                     # 取消点赞，减少计数（但不低于0）
-                    dynamic.like_count = max(0, dynamic.like_count - 1)
-                dynamic.save(update_fields=['like_count'])
-            except Dynamic.DoesNotExist:
+                    target.like_count = max(0, target.like_count - 1)
+                target.save(update_fields=['like_count'])
+            except (Dynamic.DoesNotExist, Content.DoesNotExist):
                 pass

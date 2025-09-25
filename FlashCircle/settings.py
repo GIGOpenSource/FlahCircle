@@ -92,6 +92,7 @@ REST_FRAMEWORK = {
     ],
     # 重写默认响应类
     'DEFAULT_RESPONSE_CLASS': 'middleware.utils.ApiResponse',
+    'EXCEPTION_HANDLER': 'middleware.utils.custom_exception_handler',
 }
 ALLOWED_HOSTS = ['*']
 ROOT_URLCONF = 'FlashCircle.urls'

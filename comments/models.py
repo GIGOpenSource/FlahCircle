@@ -5,18 +5,8 @@ from user.models import User
 
 
 class Comment(models.Model):
-    TABS_CHOICES = (
-        ('latest', '最新'),
-        ('recommend', '推荐'),
-    )
     type = models.CharField(max_length=255, blank=True, null=True)
     target_id = models.IntegerField(blank=True, null=True)
-    tabs = models.CharField(
-        max_length=255,
-        blank=True,
-        null=True,
-        choices=TABS_CHOICES
-    )
     parent_comment_id = models.IntegerField(blank=True, null=True)
     content = models.TextField(blank=True, null=True)
     user_id = models.IntegerField(blank=True, null=True)

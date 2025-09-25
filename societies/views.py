@@ -13,7 +13,7 @@ from societies.serializers import SocialDynamicSerializer, SocialDynamicWithFoll
 
 
 @extend_schema_view(
-    list=extend_schema(summary='获取动态视频',tags=['社区动态'],
+    list=extend_schema(summary='获取动态视频列表，关注点赞收藏',tags=['社区动态'],
         parameters=[OpenApiParameter(name='type', description='视频分类 长短视频'),
         OpenApiParameter(name='tabs', description='顶端分类： 推荐、关注、最新、发现、精选')]
     ),
@@ -95,13 +95,11 @@ class DynamicViewSet(BaseViewSet):
         serializer = SocialDynamicWithFollowSerializer(instance, context=context_data)
         return ApiResponse(serializer.data)
 
-    # @extend_schema(
-    #     summary='动态分享',
-    #     tags=['内容'],
-    #     parameters=[
-    #         OpenApiParameter(name='id', description='动态id'),
-    #     ]
-    # )
+    @extend_schema(
+        summary='分享动态视频',
+        tags=['社区动态']
+    )
+
     @action(detail=False, methods=['post'], url_path='share')
     def share(self, request):
         print(request.data.get('id'))
