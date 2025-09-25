@@ -62,7 +62,9 @@ class SessionSerializer(serializers.ModelSerializer):
     other_user_nickname = serializers.SerializerMethodField()
     other_user_avatar = serializers.SerializerMethodField()
     last_message_content = serializers.SerializerMethodField()
-
+    user_nickname = serializers.SerializerMethodField()
+    user_avatar = serializers.SerializerMethodField()
+    last_message = serializers.SerializerMethodField()
     class Meta:
         model = Session
         fields = '__all__'
@@ -88,6 +90,26 @@ class SessionSerializer(serializers.ModelSerializer):
                 return None
         return None
 
+    def get_user_nickname(self, obj):
+        if obj.user_id:
+            try:
+                from user.models import User
+                user = User.objects.get(id=obj.user_id)
+                return user.user_nickname
+            except User.DoesNotExist:
+                return None
+        return None
+
+    def get_user_avatar(self, obj):
+        if obj.user_id:
+            try:
+                from user.models import User
+                user = User.objects.get(id=obj.user_id)
+                return user.avatar.url if user.avatar else None
+            except User.DoesNotExist:
+                return None
+        return None
+
     def get_last_message_content(self, obj):
         if obj.last_message_id:
             try:
@@ -97,6 +119,25 @@ class SessionSerializer(serializers.ModelSerializer):
                 return None
         return None
 
+    def get_last_message(self, obj):
+        """
+        获取会话的最后一条消息
+        通过session_id匹配message表的receiver_id，按时间倒序返回最后一条
+        """
+        if obj.session_id:
+            try:
+                # 获取receiver_id等于session_id的最后一条消息
+                last_message = Message.objects.filter(
+                    receiver_id=obj.session_id
+                ).order_by('-create_time').first()
+
+                if last_message:
+                    # 使用MessageSerializer序列化消息
+                    return MessageSerializer(last_message).data
+                return None
+            except Exception:
+                return None
+        return None
 
 class SettingsSerializer(serializers.ModelSerializer):
     class Meta:

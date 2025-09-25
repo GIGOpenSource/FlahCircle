@@ -7,7 +7,7 @@ from drf_spectacular.utils import extend_schema_view, extend_schema, OpenApiPara
 from chat.models import Message, Session, Settings
 from chat.serializers import MessageSerializer, SessionSerializer, SettingsSerializer
 from middleware.base_views import BaseViewSet
-from middleware.utils import ApiResponse
+from middleware.utils import ApiResponse, CustomPagination
 
 
 @extend_schema_view(
@@ -87,7 +87,21 @@ class MessageViewSet(BaseViewSet):
 class SessionViewSet(BaseViewSet):
     queryset = Session.objects.all()
     serializer_class = SessionSerializer
+    pagination_class = CustomPagination
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
 
+    def list(self, request, *args, **kwargs):
+        # 获取过滤后的查询集
+        queryset = self.filter_queryset(self.get_queryset())
+        # 获取分页器实例
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            # 使用自定义分页响应
+            return self.get_paginated_response(serializer.data)
+        # 如果没有分页，返回普通响应
+        serializer = self.get_serializer(queryset, many=True)
+        return ApiResponse(serializer.data)
     @extend_schema(summary='创建会话房间', tags=['聊天室功能'])
     @action(detail=False, methods=['post'], url_path='create-room')
     def create_room(self, request):
@@ -113,7 +127,7 @@ class SessionViewSet(BaseViewSet):
         # 验证对方用户是否存在
         try:
             from user.models import User
-            User.objects.get(id=other_user_id)
+            other_user = User.objects.get(id=other_user_id)
         except User.DoesNotExist:
             return ApiResponse(code=400, message="对方用户不存在")
 
@@ -124,10 +138,27 @@ class SessionViewSet(BaseViewSet):
         ).first()
 
         if existing_session:
-            return ApiResponse({
-                'session_id': existing_session.session_id,
-                'participants': [current_user_id, other_user_id]
-            }, message="会话已存在")
+            # 如果会话已存在，获取当前用户信息并返回
+            try:
+                current_user = User.objects.get(id=current_user_id)
+                return ApiResponse({
+                    'session_id': existing_session.session_id,
+                    'participants': [
+                        {
+                            'user_id': current_user_id,
+                            'user_nickname': current_user.user_nickname
+                        },
+                        {
+                            'user_id': other_user_id,
+                            'user_nickname': other_user.user_nickname
+                        }
+                    ]
+                }, message="会话已存在")
+            except User.DoesNotExist:
+                return ApiResponse({
+                    'session_id': existing_session.session_id,
+                    'participants': [current_user_id, other_user_id]
+                }, message="会话已存在")
 
         # 生成唯一的会话ID
         import time
@@ -141,10 +172,29 @@ class SessionViewSet(BaseViewSet):
             session_type='private'
         )
 
-        # 返回会话信息
+        # 获取当前用户信息
+        try:
+            current_user = User.objects.get(id=current_user_id)
+            current_user_info = {
+                'user_id': current_user_id,
+                'user_nickname': current_user.user_nickname
+            }
+        except User.DoesNotExist:
+            current_user_info = {
+                'user_id': current_user_id,
+                'user_nickname': None
+            }
+
+        # 返回会话信息，包含两个用户的昵称
         return ApiResponse({
             'session_id': session_id,
-            'participants': [current_user_id, other_user_id]
+            'participants': [
+                current_user_info,
+                {
+                    'user_id': other_user_id,
+                    'user_nickname': other_user.user_nickname
+                }
+            ]
         }, message="会话房间创建成功")
 
 

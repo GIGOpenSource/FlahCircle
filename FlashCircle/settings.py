@@ -120,6 +120,9 @@ SPECTACULAR_SETTINGS = {
     'DESCRIPTION': '简化版后端接口文档（中文）',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
+    'PREPROCESSING_HOOKS': [
+         'middleware.utils.exclude_api_tag_hook',
+    ],
 }
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases

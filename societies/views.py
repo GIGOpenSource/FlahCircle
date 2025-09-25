@@ -15,7 +15,8 @@ from societies.serializers import SocialDynamicSerializer, SocialDynamicWithFoll
 @extend_schema_view(
     list=extend_schema(summary='获取动态视频列表，关注点赞收藏',tags=['社区动态'],
         parameters=[OpenApiParameter(name='type', description='视频分类 长短视频'),
-        OpenApiParameter(name='tabs', description='顶端分类： 推荐、关注、最新、发现、精选')]
+        OpenApiParameter(name='tabs', description='顶端分类： 推荐、关注、最新、发现、精选'),
+        ]
     ),
     retrieve=extend_schema(summary='获取动态视频详情',tags=['社区动态']),
     create=extend_schema(summary='创建动态视频',tags=['社区动态']),
@@ -28,7 +29,7 @@ class DynamicViewSet(BaseViewSet):
     serializer_class = SocialDynamicSerializer
     pagination_class = CustomPagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['type', 'tabs']
+    filterset_fields = ['type', 'tabs', 'user_id']
 
     def get_user_context_data(self, request):
         """获取当前用户的相关数据"""
@@ -67,6 +68,20 @@ class DynamicViewSet(BaseViewSet):
             context_data['favourite_dynamic_ids'] = list(favourite_dynamics)
 
         return context_data
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+
+        # 检查是否是个人动态请求
+        if self.action == 'personal':
+            # 只返回当前用户的动态
+            if self.request.user.is_authenticated:
+                queryset = queryset.filter(user_id=self.request.user.id)
+            else:
+                # 如果用户未认证，返回空查询集
+                queryset = queryset.none()
+
+        return queryset
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())

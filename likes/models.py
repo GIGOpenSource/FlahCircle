@@ -2,11 +2,14 @@ from django.db import models
 
 from contents.models import Content
 from societies.models import Dynamic
+from comments.models import Comment
 from user.models import User
 
 class Like(models.Model):
     LIKE_TYPES = (
         ('dynamic', '动态'),
+        ('content', '内容'),
+        ('comment', '评论'),
         ('video', '视频'),
     )
 
@@ -56,6 +59,14 @@ class Like(models.Model):
                 self.target_title = content.title
             except Content.DoesNotExist:
                 pass
+        elif self.type == 'comment' and self.target_id and not self.target_title:
+            try:
+                comment = Comment.objects.get(id=self.target_id)
+                self.target_author_id = comment.user_id
+                # 评论的标题可以是内容的前50个字符
+                self.target_title = comment.content[:50] if comment.content else ''
+            except Comment.DoesNotExist:
+                pass
 
         # 检查是否是状态更新
         old_status = None
@@ -75,6 +86,8 @@ class Like(models.Model):
                     target = Dynamic.objects.get(id=self.target_id)
                 elif self.type == 'content':
                     target = Content.objects.get(id=self.target_id)
+                elif self.type == 'comment':
+                    target = Comment.objects.get(id=self.target_id)
                 else:
                     return
 
@@ -85,5 +98,5 @@ class Like(models.Model):
                     # 取消点赞，减少计数（但不低于0）
                     target.like_count = max(0, target.like_count - 1)
                 target.save(update_fields=['like_count'])
-            except (Dynamic.DoesNotExist, Content.DoesNotExist):
+            except (Dynamic.DoesNotExist, Content.DoesNotExist, Comment.DoesNotExist):
                 pass

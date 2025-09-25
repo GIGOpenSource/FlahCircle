@@ -19,7 +19,7 @@ class CommentViewSet(BaseViewSet):
     filterset_fields = ['target_id', 'type', 'parent_comment_id']
     search_fields = ['content', 'user_nickname']
     ordering_fields = ['create_time', 'like_count']
-    ordering = ['-create_time']
+    # ordering = ['-create_time']
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -56,7 +56,18 @@ class CommentViewSet(BaseViewSet):
 
 
 @extend_schema_view(
-    list=extend_schema(summary='获取内容评论列表(必传target_id)只返回父级评论', tags=['内容评论管理(完成)']),
+    list=extend_schema(
+        summary='获取内容评论列表(必传target_id)只返回父级评论',
+        tags=['内容评论管理(完成)'],
+        parameters=[
+            OpenApiParameter(
+                name='ordering',
+                description='排序字段，例如: -create_time(最新), create_time(最早)，-like_count（推荐）',
+                required=False,
+                type=str
+            )
+        ]
+    ),
     create=extend_schema(summary='创建内容评论', tags=['内容评论管理(完成)']),
     destroy=extend_schema(summary='删除内容评论', tags=['内容评论管理(完成)'])
 )
@@ -89,7 +100,18 @@ class ContentCommentViewSet(CommentViewSet):
 
 
 @extend_schema_view(
-    list=extend_schema(summary='获取动态评论列表 （必传target_id）只返回父级评论', tags=['动态评论管理（完成）']),
+    list=extend_schema(
+        summary='获取动态评论列表 （必传target_id）只返回父级评论',
+        tags=['动态评论管理（完成）'],
+        parameters=[
+            OpenApiParameter(
+                name='ordering',
+                description='排序字段，例如: -create_time(最新), create_time(最早),-like_count（推荐）',
+                required=False,
+                type=str
+            )
+        ]
+    ),
     create=extend_schema(summary='创建动态评论', tags=['动态评论管理（完成）']),
     destroy=extend_schema(summary='删除动态评论', tags=['动态评论管理（完成）'])
 )

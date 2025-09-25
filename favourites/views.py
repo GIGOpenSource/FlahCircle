@@ -7,13 +7,16 @@ from .serializers import FavoriteSerializer, FavoriteToggleSerializer, DownvoteS
 from societies.models import Dynamic
 from contents.models import Content
 
+"""
+添加了 点踩功能 model
+"""
 class DynamicFavoriteViewSet(BaseViewSet):
     queryset = Favorite.objects.all()
     serializer_class = FavoriteSerializer
 
     @extend_schema(
         summary='收藏/取消收藏切换',
-        tags=['收藏管理'],
+        tags=['社区动态 收藏管理'],
         request=FavoriteToggleSerializer,
         responses={200: FavoriteSerializer}
     )
@@ -83,7 +86,7 @@ class ContentFavoriteViewSet(BaseViewSet):
 
     @extend_schema(
         summary='内容收藏/取消收藏切换',
-        tags=['收藏管理'],
+        tags=['内容 收藏管理'],
         request=FavoriteToggleSerializer,
         responses={200: FavoriteSerializer}
     )
@@ -144,7 +147,7 @@ class DownvoteViewSet(BaseViewSet):
 
     @extend_schema(
         summary='点踩/取消点踩切换',
-        tags=['点踩管理'],
+        tags=['点踩管理（完成）'],
         request=DownvoteToggleSerializer,
         responses={200: DownvoteSerializer}
     )

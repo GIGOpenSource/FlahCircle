@@ -1,6 +1,9 @@
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, filters
 from rest_framework.decorators import action
+from django.utils import timezone
+from django.db.models import Q
+from datetime import timedelta
 
 from contents.models import Content
 from contents.serializers import ContentSerializer, ContentWithFollowSerializer
@@ -11,24 +14,30 @@ from middleware.utils import ApiResponse, CustomPagination
 
 
 @extend_schema_view(
-    list=extend_schema(summary='获取内容列表 点赞收藏关注',tags=['内容'],
-        parameters=[OpenApiParameter(name='type', description='type字段过滤'),
-        OpenApiParameter(name='is_vip', description='是否vip视频 tf'),]
-    ),
-    retrieve=extend_schema(summary='获取内容详情 点赞收藏关注',tags=['内容']),
-    create=extend_schema(summary='创建内容',tags=['内容']),
-    update=extend_schema(summary='更新内容',tags=['内容']),
-    partial_update=extend_schema(summary='部分更新内容',tags=['内容']),
-    destroy=extend_schema(summary='删除内容',tags=['内容'])
+    list=extend_schema(summary='获取内容列表 搜索筛选 点赞收藏关注',tags=['内容(完成)'],
+        parameters=[
+            OpenApiParameter(name='type', description='type字段过滤'),
+            OpenApiParameter(name='is_vip', description='是否vip视频 true、false'),
+            OpenApiParameter(name='time_range', description='时间范围: month(本月), half_year(半年), longer(更久)', required=False),
+            OpenApiParameter(name='paid_only', description='仅显示付费内容: true(仅付费), false或不传(全部)',
+                             required=False)
+        ],
+       description='排序字段，例如: -create_time(最新上架),，-favorite_count（收藏量）,-like_count(热门影视)',
+       ),
+    retrieve=extend_schema(summary='获取内容详情 点赞收藏关注',tags=['内容(完成)']),
+    create=extend_schema(summary='创建内容',tags=['内容(完成)']),
+    update=extend_schema(summary='更新内容',tags=['内容(完成)']),
+    partial_update=extend_schema(summary='部分更新内容',tags=['内容(完成)']),
+    destroy=extend_schema(summary='删除内容',tags=['内容(完成)'])
 )
 class ContentViewSet(BaseViewSet):
     queryset = Content.objects.all()
     serializer_class = ContentSerializer
     pagination_class = CustomPagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['type', 'tabs', 'is_vip',]
+    filterset_fields = ['type', 'tabs', 'is_vip']
     search_fields = ['title', 'description']
-    ordering_fields = ['create_time', 'update_time']
+    ordering_fields = ['create_time', 'update_time', 'favorite_count','like_count']
     ordering = ['-create_time']
 
     def perform_create(self, serializer):
@@ -39,6 +48,32 @@ class ContentViewSet(BaseViewSet):
         # 更新时保持原有的author_id
         instance = serializer.instance
         serializer.save(author_id=instance.author_id)
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        # 获取付费解锁参数
+        paid_only = self.request.query_params.get('paid_only', None)
+        if paid_only and paid_only.lower() == 'true':
+            # 筛选price > 0的内容
+            queryset = queryset.filter(price__gt=0)
+        # 获取时间范围参数
+        time_range = self.request.query_params.get('time_range', None)
+        if time_range:
+            now = timezone.now()
+            if time_range == 'month':
+                # 本月发布的内容
+                start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+                queryset = queryset.filter(create_time__gte=start_of_month)
+            elif time_range == 'half_year':
+                # 半年内发布的内容
+                half_year_ago = now - timedelta(days=180)
+                queryset = queryset.filter(create_time__gte=half_year_ago)
+            elif time_range == 'longer':
+                # 半年以前发布的内容
+                half_year_ago = now - timedelta(days=180)
+                queryset = queryset.filter(create_time__lt=half_year_ago)
+
+        return queryset
 
     def get_user_context_data(self, request):
         """获取当前用户的相关数据"""
@@ -141,7 +176,7 @@ class ContentViewSet(BaseViewSet):
 
     @extend_schema(
         summary='分享内容',
-        tags=['内容']
+        tags=['内容管理']
     )
     @action(detail=False, methods=['post'], url_path='share')
     def share(self, request):
@@ -149,26 +184,16 @@ class ContentViewSet(BaseViewSet):
         分享内容接口
         传入内容ID，增加该内容的share_count
         """
-        # 从请求数据中获取内容ID
         content_id = request.data.get('id')
-
-        # 检查是否提供了内容ID
         if not content_id:
             return ApiResponse(code=400, message="缺少内容ID参数")
-
         try:
-            # 查找对应的内容对象
             content = Content.objects.get(id=content_id)
-            # 增加分享计数
             content.share_count = content.share_count + 1
-            # 只更新share_count字段，提高性能
             content.save(update_fields=['share_count'])
-            # 返回更新后的分享计数
             return ApiResponse(
                 data={'share_count': content.share_count},
                 message="分享成功"
             )
         except Content.DoesNotExist:
-            # 如果内容不存在，返回错误信息
             return ApiResponse(code=400, message="内容不存在")
-

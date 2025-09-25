@@ -95,3 +95,20 @@ def custom_exception_handler(exc, context):
 
     # 对于其他异常，返回默认处理结果
     return response
+
+def exclude_api_tag_hook(endpoints):
+    """
+    自定义预处理钩子，用于排除标记为'api'的接口
+    """
+    filtered = []
+    for (path, path_regex, method, callback) in endpoints:
+        # 获取视图类或函数
+        view = getattr(callback, 'cls', None) or getattr(callback, 'view_class', None)
+        if view:
+            # 检查视图是否有tags属性且包含'api'
+            tags = getattr(view, 'tags', [])
+            if 'api' in tags or (hasattr(view, 'schema') and view.schema and
+                                hasattr(view.schema, 'tags') and 'api' in view.schema.tags):
+                continue  # 排除标记为'api'的接口
+        filtered.append((path, path_regex, method, callback))
+    return filtered

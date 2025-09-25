@@ -51,6 +51,7 @@ class Content(models.Model):
     update_time = models.DateTimeField(auto_now=True)
     object_fit = models.CharField(max_length=255, blank=True, null=True)
     fullScreenShow = models.BooleanField(default=True)
+    price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True,default=0.00)
     class Meta:
         db_table = 't_content'
         ordering = ['-create_time']  # 修改为按创建时间倒序
