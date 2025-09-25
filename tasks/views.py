@@ -63,7 +63,27 @@ class RewardViewSet(BaseViewSet):
         # 更新任务状态为已领取
         try:
             reward.status = 'claimed'
-            reward.save(update_fields=['status', 'update_time'])
+            import json
+            if reward.data is None:
+                reward.data = {'claimed_times': []}
+            else:
+                # 确保data是字典类型
+                if isinstance(reward.data, str):
+                    try:
+                        reward.data = json.loads(reward.data)
+                    except json.JSONDecodeError:
+                        reward.data = {'claimed_times': []}
+
+                if not isinstance(reward.data, dict):
+                    reward.data = {'claimed_times': []}
+
+                if 'claimed_times' not in reward.data:
+                    reward.data['claimed_times'] = []
+            # 添加当前时间到领取时间列表
+            current_time = timezone.now().strftime('%Y-%m-%d %H:%M:%S')
+            reward.data['claimed_times'].append(current_time)
+
+            reward.save(update_fields=['status', 'update_time', 'data'])
 
             serializer = TaskRewardSerializer(reward)
             return ApiResponse(
