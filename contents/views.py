@@ -14,41 +14,42 @@ from middleware.utils import ApiResponse, CustomPagination
 
 
 @extend_schema_view(
-    list=extend_schema(summary='获取内容列表 搜索筛选 点赞收藏关注',tags=['内容(完成)'],
+    list=extend_schema(summary='获取内容列表 搜索筛选 点赞收藏关注',tags=['内容'],
         parameters=[
             OpenApiParameter(name='type', description='type字段过滤'),
             OpenApiParameter(name='is_vip', description='是否vip视频 true、false'),
             OpenApiParameter(name='time_range', description='时间范围: month(本月), half_year(半年), longer(更久)', required=False),
             OpenApiParameter(name='paid_only', description='仅显示付费内容: true(仅付费), false或不传(全部)',
                              required=False),
-            OpenApiParameter(name='tags', description='标签ID，多个ID用逗号分隔', required=False)
+            OpenApiParameter(name='ordering',description='首页：-like_count(最热), -create_time(最新)'
+                                                         '||发现: -like_count(精选), -create_time(发现)')
         ],
        description='排序字段，例如: -create_time(最新上架),，-favorite_count（收藏量）,-like_count(热门影视)',
        ),
-    retrieve=extend_schema(summary='获取内容详情 点赞收藏关注',tags=['内容(完成)']),
-    create=extend_schema(summary='创建内容',tags=['内容(完成)']),
-    update=extend_schema(summary='更新内容',tags=['内容(完成)']),
-    partial_update=extend_schema(summary='部分更新内容',tags=['内容(完成)']),
-    destroy=extend_schema(summary='删除内容',tags=['内容(完成)'])
+    retrieve=extend_schema(summary='获取内容详情 点赞收藏关注',tags=['内容']),
+    create=extend_schema(summary='创建内容',tags=['内容']),
+    update=extend_schema(summary='更新内容',tags=['内容']),
+    partial_update=extend_schema(summary='部分更新内容',tags=['内容']),
+    destroy=extend_schema(summary='删除内容',tags=['内容'])
 )
 class ContentViewSet(BaseViewSet):
     queryset = Content.objects.all()
     serializer_class = ContentSerializer
     pagination_class = CustomPagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['type', 'tabs', 'is_vip']
+    filterset_fields = ['type', 'tabs', 'is_vip','author']
     search_fields = ['title', 'description']
     ordering_fields = ['create_time', 'update_time', 'favorite_count','like_count']
     ordering = ['-create_time']
 
     def perform_create(self, serializer):
-        # 自动设置当前用户ID为author_id
-        serializer.save(author_id=self.request.user.id)
+        # 自动设置当前用户为作者
+        serializer.save(author=self.request.user)
 
     def perform_update(self, serializer):
-        # 更新时保持原有的author_id
+        # 更新时保持原有的作者
         instance = serializer.instance
-        serializer.save(author_id=instance.author_id)
+        serializer.save(author=instance.author)
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -87,6 +88,7 @@ class ContentViewSet(BaseViewSet):
             'followed_user_ids': [],
             'liked_dynamic_ids': [],
             'favourite_dynamic_ids': [],
+            'downvoted_content_ids': []
         }
 
         if request.user.is_authenticated:
@@ -116,6 +118,15 @@ class ContentViewSet(BaseViewSet):
             ).values_list('target_id', flat=True)
             context_data['favourite_dynamic_ids'] = list(favourite_contents)
 
+            # 获取点踩数据 - 当前用户点踩的内容ID列表
+            from favourites.models import Downvote
+            downvoted_contents = Downvote.objects.filter(
+                user_id=request.user.id,
+                target_id__isnull=False,
+                status='active',
+                type='content'
+            ).values_list('target_id', flat=True)
+            context_data['downvoted_content_ids'] = list(downvoted_contents)
         return context_data
 
     def list(self, request, *args, **kwargs):
@@ -202,3 +213,67 @@ class ContentViewSet(BaseViewSet):
             )
         except Content.DoesNotExist:
             return ApiResponse(code=400, message="内容不存在")
+
+
+@extend_schema_view(
+    list=extend_schema(summary='获取关注的内容 vip关注', tags=['社区动态'],
+   parameters=[
+       OpenApiParameter(name='is_vip', description='是否vip视频 true、false'),
+       OpenApiParameter(name='time_range',
+                        description='时间范围: month(本月), half_year(半年), longer(更久)',
+                        required=False),
+       OpenApiParameter(name='ordering', description='vip：-like_count(推荐), -create_time(最新)')
+   ],
+),
+)
+class FollowedContentViewSet(BaseViewSet):
+    """
+    关注内容ViewSet
+    通过用户ID获取该用户关注的人发布的内容
+    """
+    queryset = Content.objects.all()
+    serializer_class = ContentWithFollowSerializer
+    pagination_class = CustomPagination
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['type', 'tabs', 'is_vip']
+    search_fields = ['title', 'description']
+    ordering_fields = ['create_time', 'update_time', 'favorite_count', 'like_count']
+    ordering = ['-create_time']
+
+    def list(self, request, *args, **kwargs):
+        # 检查用户是否已认证
+        if not request.user.is_authenticated:
+            return ApiResponse(code=401, message="用户未认证")
+
+        # 获取当前用户ID
+        current_user = request.user
+        print("测试手是否调到")
+        print("测试手是否调到")
+        print("测试手是否调到")
+        # 获取该用户关注的用户ID列表
+        from follows.models import Follow
+        followed_users = Follow.objects.filter(
+            follower_id=current_user.id,
+            status='active'
+        ).values_list('followee_id', flat=True)
+
+        # 获取关注用户发布的内容
+        queryset = Content.objects.filter(author_id__in=followed_users)
+        queryset = self.filter_queryset(queryset)
+
+        # 获取当前登录用户的相关数据（用于显示是否关注、点赞、收藏等状态）
+        # 复用ContentViewSet中的方法
+        content_view_set = ContentViewSet()
+        content_view_set.request = request
+        context_data = content_view_set.get_user_context_data(request)
+
+        # 获取分页器实例
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = ContentWithFollowSerializer(page, many=True, context=context_data)
+            # 使用自定义分页响应
+            return self.get_paginated_response(serializer.data)
+
+        # 如果没有分页，返回普通响应
+        serializer = ContentWithFollowSerializer(queryset, many=True, context=context_data)
+        return ApiResponse(serializer.data)

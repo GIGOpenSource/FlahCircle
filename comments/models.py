@@ -39,3 +39,4 @@ class Comment(models.Model):
 
     def delete(self, *args, **kwargs):
         super().delete(*args, **kwargs)
+

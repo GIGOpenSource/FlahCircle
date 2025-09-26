@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from payments.views import PaymentViewSet, PaymentSettingsViewSet
+from payments.views import PaymentViewSet, PaymentSettingsViewSet, PaymentCallbackView
 
 router = DefaultRouter()
 router.register(r'pay', PaymentViewSet)
@@ -8,5 +8,6 @@ router.register(r'settings', PaymentSettingsViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('callback/', PaymentCallbackView.as_view(), name='payment_callback'),
 
 ]

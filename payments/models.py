@@ -11,6 +11,7 @@ class Payment(models.Model):
     api_key = models.CharField(max_length=255, blank=True, null=True)
     base_url = models.CharField(max_length=255, blank=True, null=True)
     status = models.CharField(max_length=255, blank=True, null=True)
+    device_id = models.CharField(max_length=255, blank=True, null=True)
     create_time = models.DateTimeField(auto_now_add=True)
     update_time = models.DateTimeField(auto_now=True)
 
@@ -20,6 +21,7 @@ class Payment(models.Model):
 
 
 class Settings(models.Model):
+    name = models.CharField(max_length=255, blank=True, null=True)
     api_id = models.CharField(max_length=255, blank=True, null=True)
     api_key = models.CharField(max_length=255, blank=True, null=True)
     base_url = models.CharField(max_length=255, blank=True, null=True)

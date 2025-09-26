@@ -102,7 +102,7 @@ class RatingViewSet(BaseViewSet):
         try:
             content = Content.objects.get(id=content_id)
         except Content.DoesNotExist:
-            return ApiResponse(code=400, message="目标内容不存在")
+            return ApiResponse(code=200, message="目标内容不存在")
 
         # 获取评分记录
         try:
@@ -110,4 +110,4 @@ class RatingViewSet(BaseViewSet):
             result_serializer = RatingSerializer(rating)
             return ApiResponse(data=result_serializer.data, message="获取评分详情成功")
         except Rating.DoesNotExist:
-            return ApiResponse(code=404, message="未找到评分记录")
+            return ApiResponse(code=200, message="未找到评分记录")

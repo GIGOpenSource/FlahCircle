@@ -43,7 +43,7 @@ class FollowViewSet(BaseViewSet):
         return ApiResponse(serializer.data)
 
     @extend_schema(
-        summary='关注/取消关注切换  关注作者',
+        summary='关注/取消关注切换  关注作者 内容可用',
         tags=['社区动态 关注管理'],
         request=FollowToggleSerializer,
         responses={200: FollowSerializer}

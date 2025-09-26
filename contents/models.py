@@ -29,9 +29,7 @@ class Content(models.Model):
         null=True,
         choices=TABS_CHOICES
     )
-    author_id = models.IntegerField(blank=True, null=True)
-    author_nickname = models.CharField(max_length=255, blank=True, null=True)
-    author_avatar = models.CharField(max_length=255, blank=True, null=True)
+    author = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='内容表')
     tags = models.ManyToManyField('tags.Tag', related_name='contents', blank=True, verbose_name="标签")
     status = models.CharField(max_length=255, blank=True, null=True)
     review_status = models.CharField(max_length=255, blank=True, null=True)
@@ -56,18 +54,7 @@ class Content(models.Model):
         ordering = ['-create_time']  # 修改为按创建时间倒序
 
     def save(self, *args, **kwargs):
-
         if not self.prefixed_id:
             self.prefixed_id = f"c_{uuid.uuid4().hex}"
 
-        if self.author_id:
-            try:
-                user = User.objects.get(id=self.author_id)
-                self.author_nickname = user.user_nickname
-                if user.avatar:
-                    self.author_avatar = user.avatar.url if user.avatar else None
-                else:
-                    self.author_avatar = None
-            except User.DoesNotExist:
-                pass
         super().save(*args, **kwargs)

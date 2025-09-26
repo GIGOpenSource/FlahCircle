@@ -55,7 +55,7 @@ class Like(models.Model):
         elif self.type == 'content' and self.target_id and not self.target_title:
             try:
                 content = Content.objects.get(id=self.target_id)
-                self.target_author_id = content.author_id
+                self.target_author_id = content.author.id if content.author else None
                 self.target_title = content.title
             except Content.DoesNotExist:
                 pass

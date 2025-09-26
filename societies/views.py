@@ -15,8 +15,8 @@ from societies.serializers import SocialDynamicSerializer, SocialDynamicWithFoll
 @extend_schema_view(
     list=extend_schema(summary='获取动态视频列表，关注点赞收藏',tags=['社区动态'],
         parameters=[OpenApiParameter(name='type', description='视频分类 长短视频'),
-        OpenApiParameter(name='tabs', description='顶端分类： 推荐、关注、最新、发现、精选'),
-        ]
+        OpenApiParameter(name='tabs', description='暂时不用'),
+        OpenApiParameter(name='ordering',description='排序字段，例如: -like_count(最热), -create_time(最新)'),]
     ),
     retrieve=extend_schema(summary='获取动态视频详情',tags=['社区动态']),
     create=extend_schema(summary='创建动态视频',tags=['社区动态']),
@@ -29,8 +29,10 @@ class DynamicViewSet(BaseViewSet):
     serializer_class = SocialDynamicSerializer
     pagination_class = CustomPagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['type', 'tabs', 'user_id']
+    filterset_fields = ['type', 'tabs', 'user']
 
+    ordering_fields = ['create_time', 'like_count', 'comment_count', 'favorite_count']
+    ordering = ['-create_time']
     def get_user_context_data(self, request):
         """获取当前用户的相关数据"""
         context_data = {
@@ -76,7 +78,7 @@ class DynamicViewSet(BaseViewSet):
         if self.action == 'personal':
             # 只返回当前用户的动态
             if self.request.user.is_authenticated:
-                queryset = queryset.filter(user_id=self.request.user.id)
+                queryset = queryset.filter(user_id=self.request.user)
             else:
                 # 如果用户未认证，返回空查询集
                 queryset = queryset.none()
@@ -110,6 +112,9 @@ class DynamicViewSet(BaseViewSet):
         serializer = SocialDynamicWithFollowSerializer(instance, context=context_data)
         return ApiResponse(serializer.data)
 
+    def perform_create(self, serializer):
+        # 自动设置当前用户
+        serializer.save(user=self.request.user)
     @extend_schema(
         summary='分享动态视频',
         tags=['社区动态']
@@ -200,16 +205,16 @@ class FollowedDynamicViewSet(BaseViewSet):
             return ApiResponse(code=401, message="用户未认证")
 
         # 获取当前用户ID
-        current_user_id = request.user.id
+        current_user = request.user
 
         # 获取该用户关注的用户ID列表
         followed_users = Follow.objects.filter(
-            follower_id=current_user_id,
+            follower_id=current_user.id,
             status='active'
         ).values_list('followee_id', flat=True)
 
         # 获取关注用户发布的动态
-        queryset = Dynamic.objects.filter(user_id__in=followed_users)
+        queryset = Dynamic.objects.filter(user__in=followed_users)
         queryset = self.filter_queryset(queryset)
 
         # 获取当前登录用户的相关数据（用于显示是否关注、点赞、收藏等状态）
@@ -279,21 +284,21 @@ class InteractionMessageViewSet(BaseViewSet):
             return ApiResponse(code=401, message="用户未认证")
 
         # 获取当前用户ID
-        current_user_id = request.user.id
+        current_user = request.user
 
         # 获取点赞消息 - 其他用户点赞当前用户发布的内容
         like_messages = Like.objects.filter(
-            target_author_id=current_user_id,
+            target_author_id=current_user.id,
             type='dynamic',
             status='active'
-        ).exclude(user_id=current_user_id)
+        ).exclude(user_id=current_user.id)
 
         # 获取评论消息 - 其他用户评论当前用户发布的内容
         # 首先获取当前用户发布的动态ID
-        user_dynamics = Dynamic.objects.filter(user_id=current_user_id).values_list('id', flat=True)
+        user_dynamics = Dynamic.objects.filter(user=current_user).values_list('id', flat=True)  # 修改为'user=current_user'
         comment_messages = Comment.objects.filter(
             target_id__in=user_dynamics
-        ).exclude(user_id=current_user_id)
+        ).exclude(user_id=current_user.id)
 
         # 构建统一的消息格式
         messages = []
@@ -302,6 +307,7 @@ class InteractionMessageViewSet(BaseViewSet):
         for like in like_messages:
             try:
                 dynamic = Dynamic.objects.get(id=like.target_id)
+                is_liked = like.status == 'active',
                 messages.append({
                     'id': like.id,
                     'type': 'like',
@@ -309,6 +315,7 @@ class InteractionMessageViewSet(BaseViewSet):
                     'user_nickname': like.user_nickname,
                     'user_avatar': like.user_avatar,
                     'target_id': like.target_id,
+                    'is_liked': is_liked,
                     'target_title': like.target_title or dynamic.title,
                     'target_content': getattr(dynamic, 'content', '')[:100] + '...' if getattr(dynamic, 'content','') else '',
                     'create_time': like.create_time,
@@ -321,6 +328,19 @@ class InteractionMessageViewSet(BaseViewSet):
         for comment in comment_messages:
             try:
                 dynamic = Dynamic.objects.get(id=comment.target_id)
+                # 检查当前登录用户是否对这个动态点过赞
+                is_liked = False
+                if request.user.is_authenticated:
+                    try:
+                        # from likes.models import Like
+                        like = Like.objects.get(
+                            type='dynamic',
+                            target_id=comment.target_id,
+                            user_id=request.user.id
+                        )
+                        is_liked = like.status == 'active'
+                    except Like.DoesNotExist:
+                        pass
                 messages.append({
                     'id': comment.id,
                     'type': 'comment',
@@ -330,6 +350,7 @@ class InteractionMessageViewSet(BaseViewSet):
                     'target_id': comment.target_id,
                     'target_title': dynamic.title,
                     'target_content': comment.content[:100] + '...' if comment.content else '',
+                    'is_liked': is_liked,
                     'create_time': comment.create_time,
                     'dynamic': SocialDynamicSerializer(dynamic).data
                 })
@@ -368,9 +389,9 @@ class InteractionMessageViewSet(BaseViewSet):
                     'title': msg['target_title'],
                     'content': msg['target_content'],
                 },
+                'is_liked': msg['is_liked'],
                 'dynamic': msg['dynamic'],
-                'create_time': msg['create_time'].isoformat() if hasattr(msg['create_time'], 'isoformat') else str(
-                    msg['create_time']),
+                'create_time': msg['create_time'].strftime('%Y-%m-%d %H:%M:%S'),
             })
 
         # 返回分页响应

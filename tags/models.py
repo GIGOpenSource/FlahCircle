@@ -12,3 +12,9 @@ class Tag(models.Model):
     class Meta:
         db_table = 't_tag'
         ordering = ['create_time']
+
+    def get_related_users(self):
+        """
+        获取关联此标签的用户，按关注者数量排序
+        """
+        return self.users.filter(is_active=True).order_by('-followers_count')

@@ -47,18 +47,40 @@ class CommentViewSet(BaseViewSet):
         # 获取分页器实例
         page = self.paginate_queryset(queryset)
         if page is not None:
-            serializer = self.get_serializer(page, many=True)
+            # 获取当前用户点赞的评论ID列表
+            context_data = self.get_user_context_data(request)
+            serializer = self.get_serializer(page, many=True, context=context_data)
             # 使用自定义分页响应
             return self.get_paginated_response(serializer.data)
-        # 如果没有分页，返回普通响应
-        serializer = self.get_serializer(queryset, many=True)
+            # 如果没有分页，返回普通响应
+            # 获取当前用户点赞的评论ID列表
+        context_data = self.get_user_context_data(request)
+        serializer = self.get_serializer(queryset, many=True, context=context_data)
         return ApiResponse(serializer.data)
 
+    def get_user_context_data(self, request):
+        """获取当前用户点赞的评论数据"""
+        context_data = {
+            'request': request,
+            'liked_comment_ids': []
+        }
+
+        if request.user.is_authenticated:
+            # 获取点赞数据 - 当前用户点赞的评论ID列表
+            from likes.models import Like
+            liked_comments = Like.objects.filter(
+                user_id=request.user.id,
+                type='comment',
+                status='active'
+            ).values_list('target_id', flat=True)
+            context_data['liked_comment_ids'] = list(liked_comments)
+
+        return context_data
 
 @extend_schema_view(
     list=extend_schema(
         summary='获取内容评论列表(必传target_id)只返回父级评论',
-        tags=['内容评论管理(完成)'],
+        tags=['内容评论管理'],
         parameters=[
             OpenApiParameter(
                 name='ordering',
@@ -68,13 +90,32 @@ class CommentViewSet(BaseViewSet):
             )
         ]
     ),
-    create=extend_schema(summary='创建内容评论', tags=['内容评论管理(完成)']),
-    destroy=extend_schema(summary='删除内容评论', tags=['内容评论管理(完成)'])
+    create=extend_schema(summary='创建内容评论', tags=['内容评论管理']),
+    destroy=extend_schema(summary='删除内容评论', tags=['内容评论管理'])
 )
 class ContentCommentViewSet(CommentViewSet):
     """
     专门处理内容评论的ViewSet
     """
+
+    def get_user_context_data(self, request):
+        """获取当前用户点赞的评论数据"""
+        context_data = {
+            'request': request,
+            'liked_comment_ids': []
+        }
+
+        if request.user.is_authenticated:
+            # 获取点赞数据 - 当前用户点赞的评论ID列表
+            from likes.models import Like
+            liked_comments = Like.objects.filter(
+                user_id=request.user.id,
+                type='comment',
+                status='active'
+            ).values_list('target_id', flat=True)
+            context_data['liked_comment_ids'] = list(liked_comments)
+
+        return context_data
 
     def perform_create(self, serializer):
         # 保存评论并更新Content的comment_count
@@ -102,7 +143,7 @@ class ContentCommentViewSet(CommentViewSet):
 @extend_schema_view(
     list=extend_schema(
         summary='获取动态评论列表 （必传target_id）只返回父级评论',
-        tags=['动态评论管理（完成）'],
+        tags=['动态评论管理'],
         parameters=[
             OpenApiParameter(
                 name='ordering',
@@ -129,6 +170,25 @@ class DynamicCommentViewSet(CommentViewSet):
         # 筛选顶级评论（parent_comment_id为0或None）
         queryset = queryset.filter(parent_comment_id=0)
         return queryset
+
+    def get_user_context_data(self, request):
+        """获取当前用户点赞的评论数据"""
+        context_data = {
+            'request': request,
+            'liked_comment_ids': []
+        }
+
+        if request.user.is_authenticated:
+            # 获取点赞数据 - 当前用户点赞的评论ID列表
+            from likes.models import Like
+            liked_comments = Like.objects.filter(
+                user_id=request.user.id,
+                type='comment',
+                status='active'
+            ).values_list('target_id', flat=True)
+            context_data['liked_comment_ids'] = list(liked_comments)
+
+        return context_data
 
     def perform_create(self, serializer):
         # 保存评论并更新Dynamic的comment_count

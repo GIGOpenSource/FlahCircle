@@ -3,9 +3,16 @@ from rest_framework import serializers
 
 from tags.models import Tag
 from contents.models import Content
+from user.models import User
 
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'user_nickname', 'avatar']
 
 class ContentSerializer(serializers.ModelSerializer):
+    author = UserSerializer(read_only=True)
     tags = serializers.PrimaryKeyRelatedField(
         queryset=Tag.objects.all(),
         many=True,
@@ -54,9 +61,11 @@ class ContentSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class ContentWithFollowSerializer(serializers.ModelSerializer):
+    author = UserSerializer(read_only=True)
     is_follower = serializers.SerializerMethodField()
     is_liked = serializers.SerializerMethodField()
     is_favourites = serializers.SerializerMethodField()
+    is_downvoted = serializers.SerializerMethodField()
     tags = serializers.SerializerMethodField()
 
     def to_representation(self, instance):
@@ -111,7 +120,7 @@ class ContentWithFollowSerializer(serializers.ModelSerializer):
             # 从上下文中获取当前用户关注的用户ID列表
             followed_user_ids = self.context.get('followed_user_ids', [])
             # 注意：Content模型使用的是author_id而不是user_id
-            return obj.author_id in followed_user_ids
+            return obj.author.id in followed_user_ids if obj.author else False
         return False
 
     def get_is_liked(self, obj):
@@ -132,4 +141,14 @@ class ContentWithFollowSerializer(serializers.ModelSerializer):
         if request and request.user.is_authenticated:
             favourite_dynamic_ids = self.context.get('favourite_dynamic_ids', [])
             return obj.id in favourite_dynamic_ids
+        return False
+
+    def get_is_downvoted(self, obj):
+        """
+        获取当前用户是否点踩了该内容
+        """
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            downvoted_content_ids = self.context.get('downvoted_content_ids', [])
+            return obj.id in downvoted_content_ids
         return False

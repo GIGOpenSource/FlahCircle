@@ -18,7 +18,7 @@ class User(AbstractUser):
     user_nickname = models.CharField(max_length=50, blank=True, null=True, verbose_name="昵称")
     # 关注和粉丝数量可以通过关系计算，但为了性能考虑可以添加缓存字段
     followers_count = models.PositiveIntegerField(default=0, verbose_name="粉丝数量")
-    following_count = models.PositiveIntegerField(default=0, verbose_name="关注数量")
+    following_count = models.PositiveIntegerField(default=0, verbose_name="关注别人数量")
     likes_count = models.PositiveIntegerField(default=0, verbose_name="获赞数量")
     is_vip = models.BooleanField(default=True, verbose_name="用户是否为vip")
     tags = models.ManyToManyField('tags.Tag', related_name='users', blank=True, verbose_name="兴趣标签")

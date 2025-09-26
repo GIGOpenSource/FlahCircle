@@ -34,9 +34,10 @@ class Dynamic(models.Model):
     is_free = models.BooleanField(default=True)
     is_vip = models.BooleanField(default=True)
     price = models.IntegerField(default=0)
-    user_id = models.IntegerField()
-    user_nickname = models.CharField(max_length=255, blank=True, null=True)
-    user_avatar = models.CharField(max_length=255, blank=True, null=True)
+    # user_id = models.IntegerField()
+    # user_nickname = models.CharField(max_length=255, blank=True, null=True)
+    # user_avatar = models.CharField(max_length=255, blank=True, null=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='dynamics')
     like_count = models.IntegerField(default=0)
     comment_count = models.IntegerField(default=0)
     favorite_count = models.IntegerField(default=0)
@@ -53,15 +54,5 @@ class Dynamic(models.Model):
     def save(self, *args, **kwargs):
         if not self.prefixed_id:
             self.prefixed_id = f"d_{uuid.uuid4().hex}"
-        if self.user_id:
-            try:
-                user = User.objects.get(id=self.user_id)
-                self.user_nickname = user.user_nickname
-                if user.avatar:
-                    self.user_avatar = user.avatar.url
-                else:
-                    self.user_avatar = None
-            except User.DoesNotExist:
-                pass
         super().save(*args, **kwargs)
 
