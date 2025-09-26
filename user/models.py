@@ -21,6 +21,8 @@ class User(AbstractUser):
     following_count = models.PositiveIntegerField(default=0, verbose_name="关注数量")
     likes_count = models.PositiveIntegerField(default=0, verbose_name="获赞数量")
     is_vip = models.BooleanField(default=True, verbose_name="用户是否为vip")
+    tags = models.ManyToManyField('tags.Tag', related_name='users', blank=True, verbose_name="兴趣标签")
+
     # 保留Django内置的groups和user_permissions用于分组权限
     groups = models.ManyToManyField(
         Group,
@@ -43,6 +45,22 @@ class User(AbstractUser):
         # 如果没有昵称，生成默认昵称
         if not self.user_nickname:
             self.user_nickname = f"小知了{get_random_string(10, '0123456789abcdefghijklmnopqrstuvwxyz')}"
+
+        # 确保用户名不为空
+        if not self.username:
+            if self.email:
+                # 使用邮箱的前缀作为用户名
+                self.username = self.email.split('@')[0]
+            else:
+                # 生成一个随机用户名
+                self.username = f"user_{get_random_string(10, '0123456789abcdefghijklmnopqrstuvwxyz')}"
+
+        # 确保用户名唯一
+        original_username = self.username
+        counter = 1
+        while User.objects.filter(username=self.username).exclude(pk=self.pk).exists():
+            self.username = f"{original_username}_{counter}"
+            counter += 1
 
         super().save(*args, **kwargs)
 
@@ -82,3 +100,19 @@ class User(AbstractUser):
             following=self,
             is_active=True
         ).exists()
+
+    def get_followed_tags(self):
+        """获取用户关注的标签"""
+        return self.tags.all()
+
+    def follow_tag(self, tag):
+        """关注标签"""
+        self.tags.add(tag)
+
+    def unfollow_tag(self, tag):
+        """取消关注标签"""
+        self.tags.remove(tag)
+
+    def is_following_tag(self, tag):
+        """判断用户是否关注了指定标签"""
+        return self.tags.filter(id=tag.id).exists()

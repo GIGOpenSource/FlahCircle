@@ -1,9 +1,17 @@
 # user/serializers.py
 from rest_framework import serializers
+
+from tags.models import Tag
 from contents.models import Content
 
 
 class ContentSerializer(serializers.ModelSerializer):
+    tags = serializers.PrimaryKeyRelatedField(
+        queryset=Tag.objects.all(),
+        many=True,
+        required=False
+    )
+
     def to_representation(self, instance):
         data = super().to_representation(instance)
         # 格式化数值字段
@@ -14,6 +22,18 @@ class ContentSerializer(serializers.ModelSerializer):
         data['share_count'] = self.format_number(data.get('share_count', 0))
         data['score_count'] = self.format_number(data.get('score_count', 0))
         data['score_total'] = self.format_number(data.get('score_total', 0))
+        # 处理标签信息的序列化
+        if 'tags' in data and instance.tags.exists():
+            data['tags'] = [
+                {
+                    'id': tag.id,
+                    'name': tag.name,
+                    'description': tag.description
+                }
+                for tag in instance.tags.all()
+            ]
+        else:
+            data['tags'] = []
         return data
 
     def format_number(self, value):
@@ -37,6 +57,7 @@ class ContentWithFollowSerializer(serializers.ModelSerializer):
     is_follower = serializers.SerializerMethodField()
     is_liked = serializers.SerializerMethodField()
     is_favourites = serializers.SerializerMethodField()
+    tags = serializers.SerializerMethodField()
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -67,6 +88,19 @@ class ContentWithFollowSerializer(serializers.ModelSerializer):
     class Meta:
         model = Content
         fields = '__all__'
+
+    def get_tags(self, obj):
+        """获取内容的标签信息"""
+        if obj.tags.exists():
+            return [
+                {
+                    'id': tag.id,
+                    'name': tag.name,
+                    'description': tag.description
+                }
+                for tag in obj.tags.all()
+            ]
+        return []
 
     def get_is_follower(self, obj):
         """

@@ -20,7 +20,8 @@ from middleware.utils import ApiResponse, CustomPagination
             OpenApiParameter(name='is_vip', description='是否vip视频 true、false'),
             OpenApiParameter(name='time_range', description='时间范围: month(本月), half_year(半年), longer(更久)', required=False),
             OpenApiParameter(name='paid_only', description='仅显示付费内容: true(仅付费), false或不传(全部)',
-                             required=False)
+                             required=False),
+            OpenApiParameter(name='tags', description='标签ID，多个ID用逗号分隔', required=False)
         ],
        description='排序字段，例如: -create_time(最新上架),，-favorite_count（收藏量）,-like_count(热门影视)',
        ),
@@ -72,7 +73,11 @@ class ContentViewSet(BaseViewSet):
                 # 半年以前发布的内容
                 half_year_ago = now - timedelta(days=180)
                 queryset = queryset.filter(create_time__lt=half_year_ago)
-
+        # 根据分类ID筛选内容
+        tags = self.request.query_params.get('tags', None)
+        if tags:
+            tag_ids = tags.split(',')
+            queryset = queryset.filter(tags__id__in=tag_ids).distinct()
         return queryset
 
     def get_user_context_data(self, request):
