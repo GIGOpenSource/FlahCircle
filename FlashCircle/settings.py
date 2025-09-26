@@ -56,7 +56,8 @@ INSTALLED_APPS = [
     'societies',
     'tags',
     'tasks',
-    'comments'
+    'comments',
+    'rating',
 ]
 
 AUTH_USER_MODEL = 'user.User'

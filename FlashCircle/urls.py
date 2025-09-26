@@ -39,5 +39,6 @@ urlpatterns = [
     path('api/tags/', include('tags.urls')),
     path('api/tasks/', include('tasks.urls')),
     path('api/comments/', include('comments.urls')),
+    path('api/ratings/',include('rating.urls'))
 ]
 

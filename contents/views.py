@@ -81,7 +81,7 @@ class ContentViewSet(BaseViewSet):
             'request': request,
             'followed_user_ids': [],
             'liked_dynamic_ids': [],
-            'favourite_dynamic_ids': []
+            'favourite_dynamic_ids': [],
         }
 
         if request.user.is_authenticated:
