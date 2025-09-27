@@ -8,18 +8,14 @@ from middleware.utils import ApiResponse
 from .models import Like
 from .serializers import LikeSerializer, LikeToggleSerializer
 from contents.models import Content
-# @extend_schema_view(
-#     list=extend_schema(summary='获取点赞列表', tags=['点赞管理']),
-#     retrieve=extend_schema(summary='获取点赞详情', tags=['点赞管理']),
-#     destroy=extend_schema(summary='删除点赞', tags=['点赞管理'])
-# )
+@extend_schema(tags=['点赞管理 社区动态'])
 class DynamicLikeViewSet(BaseViewSet):
     queryset = Like.objects.all()
     serializer_class = LikeSerializer
 
     @extend_schema(
         summary='动态点赞/取消点赞切换',
-        tags=['社区动态 点赞管理'],
+
         request=LikeToggleSerializer,
         responses={200: LikeSerializer}
     )
@@ -71,18 +67,14 @@ class DynamicLikeViewSet(BaseViewSet):
         return Like.objects.none()
 
 
-# @extend_schema_view(
-#     list=extend_schema(summary='获取内容点赞列表', tags=['点赞管理']),
-#     retrieve=extend_schema(summary='获取内容点赞详情', tags=['点赞管理']),
-#     destroy=extend_schema(summary='删除内容点赞', tags=['点赞管理'])
-# )
+
+@extend_schema(tags=['点赞管理 内容 '])
 class ContentLikeViewSet(BaseViewSet):
     queryset = Like.objects.all()
     serializer_class = LikeSerializer
 
     @extend_schema(
         summary='内容点赞/取消点赞切换',
-        tags=['内容 点赞管理'],
         request=LikeToggleSerializer,
         responses={200: LikeSerializer}
     )
@@ -136,13 +128,12 @@ class ContentLikeViewSet(BaseViewSet):
             return Like.objects.filter(user_id=self.request.user.id,type='content')
         return Like.objects.none()
 
-
+@extend_schema(tags=['点赞管理 评论'])
 class CommentLikeViewSet(BaseViewSet):
     queryset = Like.objects.all()
     serializer_class = LikeSerializer
     @extend_schema(
         summary='评论点赞/取消点赞切换',
-        tags=['评论 点赞管理'],
         request=LikeToggleSerializer,
         responses={200: LikeSerializer}
     )

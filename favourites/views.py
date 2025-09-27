@@ -10,13 +10,15 @@ from contents.models import Content
 """
 添加了 点踩功能 model
 """
+
+
+@extend_schema(tags=['收藏管理 社区动态 '])
 class DynamicFavoriteViewSet(BaseViewSet):
     queryset = Favorite.objects.all()
     serializer_class = FavoriteSerializer
 
     @extend_schema(
         summary='收藏/取消收藏切换',
-        tags=['社区动态 收藏管理'],
         request=FavoriteToggleSerializer,
         responses={200: FavoriteSerializer}
     )
@@ -74,6 +76,7 @@ class DynamicFavoriteViewSet(BaseViewSet):
         # 自动设置当前用户信息
         serializer.save(user_id=self.request.user.id, type='dynamic')
 
+@extend_schema(tags=['收藏管理 内容'])
 class ContentFavoriteViewSet(BaseViewSet):
     queryset = Favorite.objects.all()
     serializer_class = FavoriteSerializer
@@ -86,7 +89,6 @@ class ContentFavoriteViewSet(BaseViewSet):
 
     @extend_schema(
         summary='内容收藏/取消收藏切换',
-        tags=['内容 收藏管理'],
         request=FavoriteToggleSerializer,
         responses={200: FavoriteSerializer}
     )
@@ -138,6 +140,7 @@ class ContentFavoriteViewSet(BaseViewSet):
         # 自动设置当前用户信息和类型
         serializer.save(user_id=self.request.user.id, type='content')
 
+@extend_schema(tags=["点踩管理 内容"])
 class DownvoteViewSet(BaseViewSet):
     """
     点踩功能视图集
@@ -147,7 +150,6 @@ class DownvoteViewSet(BaseViewSet):
 
     @extend_schema(
         summary='点踩/取消点踩切换',
-        tags=['点踩管理（完成）'],
         request=DownvoteToggleSerializer,
         responses={200: DownvoteSerializer}
     )

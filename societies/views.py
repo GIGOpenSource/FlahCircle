@@ -11,7 +11,7 @@ from middleware.utils import CustomPagination, ApiResponse
 from societies.models import Dynamic
 from societies.serializers import SocialDynamicSerializer, SocialDynamicWithFollowSerializer
 
-
+@extend_schema(tags=["社区动态"])
 @extend_schema_view(
     list=extend_schema(summary='获取动态视频列表，关注点赞收藏',tags=['社区动态'],
         parameters=[OpenApiParameter(name='type', description='视频分类 长短视频'),
@@ -143,7 +143,7 @@ class DynamicViewSet(BaseViewSet):
         except Dynamic.DoesNotExist:
             return ApiResponse(code=400, message="动态不存在")
 
-
+@extend_schema(tags=["社区动态"])
 @extend_schema_view(
     list=extend_schema(summary='获取关注的动态', tags=['社区动态'])
 )
@@ -231,7 +231,7 @@ class FollowedDynamicViewSet(BaseViewSet):
         serializer = SocialDynamicWithFollowSerializer(queryset, many=True, context=context_data)
         return ApiResponse(serializer.data)
 
-
+@extend_schema(tags=["社区动态"])
 @extend_schema_view(
     list=extend_schema(summary='获取互动消息', tags=['社区动态'])
 )

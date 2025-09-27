@@ -96,19 +96,36 @@ def custom_exception_handler(exc, context):
     # 对于其他异常，返回默认处理结果
     return response
 
-def exclude_api_tag_hook(endpoints):
+
+def exclude_api_tag_hook(endpoints=None, **kwargs):
     """
-    自定义预处理钩子，用于排除标记为'api'的接口
+    排除默认的 'api' 标签
     """
-    filtered = []
-    for (path, path_regex, method, callback) in endpoints:
-        # 获取视图类或函数
-        view = getattr(callback, 'cls', None) or getattr(callback, 'view_class', None)
-        if view:
-            # 检查视图是否有tags属性且包含'api'
-            tags = getattr(view, 'tags', [])
-            if 'api' in tags or (hasattr(view, 'schema') and view.schema and
-                                hasattr(view.schema, 'tags') and 'api' in view.schema.tags):
-                continue  # 排除标记为'api'的接口
-        filtered.append((path, path_regex, method, callback))
-    return filtered
+    if endpoints is None:
+        endpoints = []
+
+    # 创建新的端点列表
+    filtered_endpoints = []
+
+    for endpoint in endpoints:
+        print("Endpoint:", endpoint)
+
+        # 获取操作对象（第三个元素）
+        operation = endpoint[2]
+        print("Operation:", operation)
+
+        # 检查 operation 是否为字典且包含 tags 字段
+        if isinstance(operation, dict) and 'tags' in operation:
+            # 如果包含 'api' 标签，则移除
+            if 'api' in operation['tags']:
+                print("找到了tags", operation['tags'])
+                operation['tags'] = [tag for tag in operation['tags'] if tag != 'api']
+
+                # 如果标签为空，则移除整个标签字段
+                if not operation['tags']:
+                    del operation['tags']
+
+        # 添加到过滤后的端点列表
+        filtered_endpoints.append(endpoint)
+
+    return filtered_endpoints

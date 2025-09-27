@@ -124,6 +124,7 @@ SPECTACULAR_SETTINGS = {
     'PREPROCESSING_HOOKS': [
          'middleware.utils.exclude_api_tag_hook',
     ],
+    'TAGS': [],
 }
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases

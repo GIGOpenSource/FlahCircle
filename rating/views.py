@@ -6,15 +6,13 @@ from .models import Rating
 from .serializers import RatingSerializer, RatingCreateSerializer, RatingGetSerializer
 from contents.models import Content
 
-
+@extend_schema(tags=["评分管理"])
 @extend_schema_view(
     list=extend_schema(
         summary='获取评分列表',
-        tags=['评分管理'],
     ),
     retrieve=extend_schema(
         summary='获取评分详情',
-        tags=['评分管理'],
     ),
 )
 class RatingViewSet(BaseViewSet):

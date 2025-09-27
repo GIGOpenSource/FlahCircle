@@ -9,17 +9,13 @@ from django_filters.rest_framework import DjangoFilterBackend
 
 from middleware.utils import CustomPagination, ApiResponse
 
-
+@extend_schema(tags=["关注管理 社区动态/内容"])
 @extend_schema_view(
-    list=extend_schema(summary='获取关注列表（分页)',tags=['社区动态 关注管理'],
+    list=extend_schema(summary='获取关注列表（分页)',
         parameters=[OpenApiParameter(name='follower_id', description='关注类型过滤'),
         OpenApiParameter(name='followee_id', description='关注描述过滤'),]
     ),
-    retrieve=extend_schema(summary='获取关注详情',tags=['社区动态 关注管理']),
-    # create=extend_schema(summary='创建关注',tags=['关注管理']),
-    # update=extend_schema(summary='更新关注',tags=['关注管理']),
-    # partial_update=extend_schema(summary='部分更新关注',tags=['关注管理']),
-    # destroy=extend_schema(summary='删除关注',tags=['关注管理'])
+    retrieve=extend_schema(summary='获取关注详情'),
 )
 class FollowViewSet(BaseViewSet):
     queryset = Follow.objects.all()
@@ -44,7 +40,6 @@ class FollowViewSet(BaseViewSet):
 
     @extend_schema(
         summary='关注/取消关注切换  关注作者 内容可用',
-        tags=['社区动态 关注管理'],
         request=FollowToggleSerializer,
         responses={200: FollowSerializer}
     )

@@ -14,14 +14,13 @@ from middleware.utils import ApiResponse
 
 User = get_user_model()
 
-
-@extend_schema_view(
-    create=extend_schema(
-        summary="用户注册",
-        description="用户自主注册账号，返回认证token",
-        request=UserRegisterSerializer,
-        responses={201: "注册成功", 400: "参数错误"}
-    )
+# @extend_schema(tags=["用户管理"])
+@extend_schema(
+    tags=["用户管理"],
+    summary="用户注册",
+    description="用户自主注册账号，返回认证token",
+    request=UserRegisterSerializer,
+    responses={201: "注册成功", 400: "参数错误"}
 )
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()

@@ -73,7 +73,7 @@ class MessageViewSet(BaseViewSet):
         serializer = MessageSerializer(message)
         return ApiResponse(serializer.data, message="消息发送成功")
 
-
+@extend_schema(tags=["会话管理"])
 @extend_schema_view(
     list=extend_schema(summary='获取会话',tags=['会话管理'],
         parameters=[OpenApiParameter(name='type', description='type字段过滤'),]

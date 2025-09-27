@@ -192,7 +192,7 @@ class ContentViewSet(BaseViewSet):
 
     @extend_schema(
         summary='分享内容',
-        tags=['内容管理']
+        tags=['分享管理 内容']
     )
     @action(detail=False, methods=['post'], url_path='share')
     def share(self, request):
@@ -214,9 +214,9 @@ class ContentViewSet(BaseViewSet):
         except Content.DoesNotExist:
             return ApiResponse(code=400, message="内容不存在")
 
-
+@extend_schema(tags=["社区动态"])
 @extend_schema_view(
-    list=extend_schema(summary='获取关注的内容 vip关注', tags=['社区动态'],
+   list=extend_schema(summary='获取关注的内容 vip关注',
    parameters=[
        OpenApiParameter(name='is_vip', description='是否vip视频 true、false'),
        OpenApiParameter(name='time_range',

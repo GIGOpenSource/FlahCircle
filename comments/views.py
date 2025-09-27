@@ -77,10 +77,10 @@ class CommentViewSet(BaseViewSet):
 
         return context_data
 
+@extend_schema(tags=["评论管理 内容"])
 @extend_schema_view(
     list=extend_schema(
         summary='获取内容评论列表(必传target_id)只返回父级评论',
-        tags=['内容评论管理'],
         parameters=[
             OpenApiParameter(
                 name='ordering',
@@ -90,8 +90,8 @@ class CommentViewSet(BaseViewSet):
             )
         ]
     ),
-    create=extend_schema(summary='创建内容评论', tags=['内容评论管理']),
-    destroy=extend_schema(summary='删除内容评论', tags=['内容评论管理'])
+    create=extend_schema(summary='创建内容评论'),
+    destroy=extend_schema(summary='删除内容评论')
 )
 class ContentCommentViewSet(CommentViewSet):
     """
@@ -139,11 +139,10 @@ class ContentCommentViewSet(CommentViewSet):
         except Content.DoesNotExist:
             pass
 
-
+@extend_schema(tags=["评论管理 动态"])
 @extend_schema_view(
     list=extend_schema(
         summary='获取动态评论列表 （必传target_id）只返回父级评论',
-        tags=['动态评论管理'],
         parameters=[
             OpenApiParameter(
                 name='ordering',
@@ -153,8 +152,8 @@ class ContentCommentViewSet(CommentViewSet):
             )
         ]
     ),
-    create=extend_schema(summary='创建动态评论', tags=['动态评论管理（完成）']),
-    destroy=extend_schema(summary='删除动态评论', tags=['动态评论管理（完成）'])
+    create=extend_schema(summary='创建动态评论'),
+    destroy=extend_schema(summary='删除动态评论')
 )
 class DynamicCommentViewSet(CommentViewSet):
     """
