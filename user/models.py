@@ -22,7 +22,7 @@ class User(AbstractUser):
     is_vip = models.BooleanField(default=True, verbose_name="用户是否为vip")
     tags = models.ManyToManyField('tags.Tag', related_name='users', blank=True, verbose_name="兴趣标签")
     gold_coin = models.PositiveIntegerField(default=0, verbose_name="金币数量")
-
+    vip_days = models.PositiveIntegerField(default=0, verbose_name="会员天数")
     # 保留Django内置的groups和user_permissions用于分组权限
     groups = models.ManyToManyField(
         Group,
