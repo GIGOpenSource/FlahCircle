@@ -13,8 +13,8 @@ endpoint = os.environ.get('ALIYUN_OSS_ENDPOINT', 'oss-cn-beijing.aliyuncs.com')
 bucket_name = os.environ.get('ALIYUN_OSS_BUCKET_NAME', 'flashcircle')
 
 # 添加检查确保必要的环境变量已设置
-if not access_key_id or not access_key_secret:
-    raise ValueError("请设置环境变量 ALIYUN_ACCESS_KEY_ID 和 ALIYUN_ACCESS_KEY_SECRET")
+# if not access_key_id or not access_key_secret:
+#     raise ValueError("请设置环境变量 ALIYUN_ACCESS_KEY_ID 和 ALIYUN_ACCESS_KEY_SECRET")
 
 # 初始化OSS客户端
 auth = oss2.Auth(access_key_id, access_key_secret)
