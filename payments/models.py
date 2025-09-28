@@ -3,6 +3,21 @@ import json
 from django.db import models
 from user.models import User
 
+
+class Benefits(models.Model):
+    """会员权益表"""
+    name = models.CharField(max_length=255, verbose_name='权益名称')
+    benefits_icon = models.TextField(blank=True, null=True, verbose_name='权益图标链接')
+    create_time = models.DateTimeField(auto_now_add=True)
+    update_time = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 't_benefits'
+        ordering = ['id']
+
+    def __str__(self):
+        return self.name
+
 class Payment(models.Model):
     pay_name = models.CharField(max_length=255, blank=True, null=True,verbose_name='支付名称')
     amount = models.FloatField(blank=True, null=True, default=0, verbose_name='充值原价金额')
@@ -15,20 +30,10 @@ class Payment(models.Model):
     create_time = models.DateTimeField(auto_now_add=True)
     update_time = models.DateTimeField(auto_now=True)
     promotion_text = models.TextField(blank=True, null=True,verbose_name='促销文案')
-    membership_benefits = models.TextField(blank=True, null=True,verbose_name='会员权益')
+    benefits = models.ManyToManyField(Benefits, related_name='payments', blank=True, verbose_name='会员权益')
     class Meta:
         db_table = 't_payment'
         ordering = ['create_time']
-
-    def get_membership_benefits(self):
-        """获取会员权益列表"""
-        if self.membership_benefits:
-            try:
-                return json.loads(self.membership_benefits)
-            except (json.JSONDecodeError, TypeError):
-                return []
-        return []
-
 
 class Settings(models.Model):
     name = models.CharField(max_length=255, blank=True, null=True)

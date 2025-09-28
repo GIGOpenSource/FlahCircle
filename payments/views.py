@@ -15,8 +15,8 @@ from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema_view, extend_schema, OpenApiParameter
 from middleware.base_views import BaseViewSet
 from middleware.utils import CustomPagination
-from payments.models import Payment, Settings
-from payments.serializers import PaymentSerializer, PaymentSettingsSerializer
+from payments.models import Payment, Settings, Benefits
+from payments.serializers import PaymentSerializer, PaymentSettingsSerializer, BenefitsSerializer
 from orders.models import Order
 
 
@@ -42,6 +42,20 @@ class PaymentSettingsViewSet(BaseViewSet):
     queryset = Settings.objects.all()
     serializer_class = PaymentSettingsSerializer
 
+
+@extend_schema(tags=["会员权益管理"])
+@extend_schema_view(
+    list=extend_schema(summary='会员权益列表'),
+    retrieve=extend_schema(summary='会员权益详情'),
+    create=extend_schema(summary='创建会员权益'),
+    update=extend_schema(summary='更新会员权益'),
+    partial_update=extend_schema(summary='部分更新会员权益'),
+    destroy=extend_schema(summary='删除会员权益')
+)
+class BenefitsViewSet(BaseViewSet):
+    queryset = Benefits.objects.all()
+    serializer_class = BenefitsSerializer
+    pagination_class = CustomPagination
 
 @method_decorator(csrf_exempt, name='dispatch')
 class PaymentCallbackView(View):

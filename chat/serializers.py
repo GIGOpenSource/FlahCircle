@@ -28,7 +28,13 @@ class MessageSerializer(serializers.ModelSerializer):
             try:
                 from user.models import User
                 user = User.objects.get(id=obj.sender_id)
-                return user.avatar.url if user.avatar else None
+                if user.avatar:
+                    # 如果avatar是字符串URL，则直接返回；否则尝试获取url属性
+                    if isinstance(user.avatar, str):
+                        return user.avatar
+                    else:
+                        return getattr(user.avatar, 'url', None)
+                return None
             except User.DoesNotExist:
                 return None
         return None
@@ -50,7 +56,14 @@ class MessageSerializer(serializers.ModelSerializer):
             try:
                 from user.models import User
                 user = User.objects.get(id=obj.receiver_id)
-                return user.avatar.url if user.avatar else None
+                # 修复：检查avatar是否存在且有url属性
+                if user.avatar:
+                    # 如果avatar是字符串URL，则直接返回；否则尝试获取url属性
+                    if isinstance(user.avatar, str):
+                        return user.avatar
+                    else:
+                        return getattr(user.avatar, 'url', None)
+                return None
             except User.DoesNotExist:
                 return None
             except:
@@ -85,7 +98,14 @@ class SessionSerializer(serializers.ModelSerializer):
             try:
                 from user.models import User
                 user = User.objects.get(id=obj.other_user_id)
-                return user.avatar.url if user.avatar else None
+                # 修复：检查avatar是否存在且有url属性
+                if user.avatar:
+                    # 如果avatar是字符串URL，则直接返回；否则尝试获取url属性
+                    if isinstance(user.avatar, str):
+                        return user.avatar
+                    else:
+                        return getattr(user.avatar, 'url', None)
+                return None
             except User.DoesNotExist:
                 return None
         return None
@@ -105,7 +125,13 @@ class SessionSerializer(serializers.ModelSerializer):
             try:
                 from user.models import User
                 user = User.objects.get(id=obj.user_id)
-                return user.avatar.url if user.avatar else None
+                if user.avatar:
+                    # 如果avatar是字符串URL，则直接返回；否则尝试获取url属性
+                    if isinstance(user.avatar, str):
+                        return user.avatar
+                    else:
+                        return getattr(user.avatar, 'url', None)
+                return None
             except User.DoesNotExist:
                 return None
         return None
@@ -132,7 +158,6 @@ class SessionSerializer(serializers.ModelSerializer):
                 ).order_by('-create_time').first()
 
                 if last_message:
-                    # 使用MessageSerializer序列化消息
                     return MessageSerializer(last_message).data
                 return None
             except Exception:

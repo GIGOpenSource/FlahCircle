@@ -6,11 +6,13 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from .utils import ApiResponse
 
-# 直接在代码中填写AccessKey和Endpoint
+# # 直接在代码中填写AccessKey和Endpoint
 access_key_id = os.environ.get('ALIYUN_ACCESS_KEY_ID')
 access_key_secret = os.environ.get('ALIYUN_ACCESS_KEY_SECRET')
 endpoint = os.environ.get('ALIYUN_OSS_ENDPOINT', 'oss-cn-beijing.aliyuncs.com')  # 例如oss-cn-hangzhou.aliyuncs.com
 bucket_name = os.environ.get('ALIYUN_OSS_BUCKET_NAME', 'flashcircle')
+
+
 
 
 # 初始化OSS客户端

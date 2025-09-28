@@ -3,11 +3,11 @@ from datetime import timedelta
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.exceptions import AuthenticationFailed
 
-
 class ExpiringTokenAuthentication(TokenAuthentication):
     """
     自定义Token认证类，支持token过期机制
     """
+
     def authenticate_credentials(self, key):
         model = self.get_model()
         try:
