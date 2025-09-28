@@ -17,8 +17,12 @@ bucket_name = os.environ.get('ALIYUN_OSS_BUCKET_NAME', 'flashcircle')
 #     raise ValueError("请设置环境变量 ALIYUN_ACCESS_KEY_ID 和 ALIYUN_ACCESS_KEY_SECRET")
 
 # 初始化OSS客户端
-auth = oss2.Auth(access_key_id, access_key_secret)
-bucket = oss2.Bucket(auth, endpoint, bucket_name)
+try:
+    auth = oss2.Auth(access_key_id, access_key_secret)
+    bucket = oss2.Bucket(auth, endpoint, bucket_name)
+    print("初始化成功")
+except Exception as e:
+    print("初始化失败:", e)
 
 
 @extend_schema(tags=['上传管理'])
