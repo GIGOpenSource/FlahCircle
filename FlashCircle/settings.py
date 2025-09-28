@@ -139,7 +139,7 @@ if POSTGRES_HOST:
             'USER': os.getenv('POSTGRES_USER', 'flashc'),
             'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'flashc'),
             'HOST': POSTGRES_HOST,
-            'PORT': os.getenv('POSTGRES_PORT', '5433'),
+            'PORT': os.getenv('POSTGRES_PORT', '5432'),
         }
     }
 else:

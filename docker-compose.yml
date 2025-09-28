@@ -1,7 +1,7 @@
 services:
   nginx:
     image: nginx:1.27-alpine
-    container_name: clipai_nginx
+    container_name: flashc_nginx
     ports:
       - "80:80"
       - "443:443"
@@ -15,11 +15,11 @@ services:
     depends_on:
       - web
     networks:
-      - clipai_net
+      - flashc_net
 
   web:
     build: .
-    container_name: clipai_web
+    container_name: flashc_web
     command: sh -c "
       find . -path \"*/migrations/*.py\" -not -name \"__init__.py\" -delete &&
       find . -path \"*/migrations/*.pyc\" -delete &&
@@ -33,36 +33,36 @@ services:
     volumes:
       - ./staticfiles:/app/staticfiles
     environment:
-      - DJANGO_SETTINGS_MODULE=ClipAI.settings
+      - DJANGO_SETTINGS_MODULE=FlashCircle.settings
       - ALLOWED_HOSTS=*
       - POSTGRES_HOST=db
-      - POSTGRES_DB=clipai
-      - POSTGRES_USER=clipai
-      - POSTGRES_PASSWORD=clipai
+      - POSTGRES_DB=flashc
+      - POSTGRES_USER=flashc
+      - POSTGRES_PASSWORD=flashc
     depends_on:
       - db
     networks:
-      - clipai_net
+      - flashc_net
 
   db:
     image: postgres:16-alpine
-    container_name: clipai_db
+    container_name: flahcicle_db
     environment:
-      - POSTGRES_DB=clipai
-      - POSTGRES_USER=clipai
-      - POSTGRES_PASSWORD=clipai
+      - POSTGRES_DB=flashc
+      - POSTGRES_USER=flashc
+      - POSTGRES_PASSWORD=flashc
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     networks:
-      - clipai_net
+      - flashc_net
 
 volumes:
   pgdata:
 
 
 networks:
-  clipai_net:
-    name: clipai_net
+  flashc_net:
+    name: flashc_net
 
