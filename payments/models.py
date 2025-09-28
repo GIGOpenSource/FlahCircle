@@ -1,23 +1,33 @@
+import json
+
 from django.db import models
+from user.models import User
 
 class Payment(models.Model):
-    order_id = models.IntegerField(blank=True, null=True)
-    user_id = models.IntegerField(blank=True, null=True)
-    user_nickname = models.CharField(max_length=255, blank=True, null=True)
-    amount = models.IntegerField(blank=True, null=True, default=0)
-    pay_method = models.CharField(max_length=255, blank=True, null=True)
-    pay_channel = models.CharField(max_length=255, blank=True, null=True)
-    api_id = models.CharField(max_length=255, blank=True, null=True)
-    api_key = models.CharField(max_length=255, blank=True, null=True)
-    base_url = models.CharField(max_length=255, blank=True, null=True)
+    pay_name = models.CharField(max_length=255, blank=True, null=True,verbose_name='支付名称')
+    amount = models.FloatField(blank=True, null=True, default=0, verbose_name='充值原价金额')
+    pay_price = models.FloatField(blank=True, null=True, default=0, verbose_name='支付折扣金额')
+    pay_channel = models.CharField(max_length=255, blank=True, null=True,verbose_name='支付渠道对应 vip gold')
+    days_num = models.IntegerField(blank=True, null=True, default=0, verbose_name='充值天数')
+    gold_coin = models.IntegerField(blank=True, null=True, default=0, verbose_name='金币数量')
     status = models.CharField(max_length=255, blank=True, null=True)
-    device_id = models.CharField(max_length=255, blank=True, null=True)
+    is_active = models.BooleanField(blank=True, null=True, default=False,verbose_name='是否启用')
     create_time = models.DateTimeField(auto_now_add=True)
     update_time = models.DateTimeField(auto_now=True)
-
+    promotion_text = models.TextField(blank=True, null=True,verbose_name='促销文案')
+    membership_benefits = models.TextField(blank=True, null=True,verbose_name='会员权益')
     class Meta:
         db_table = 't_payment'
         ordering = ['create_time']
+
+    def get_membership_benefits(self):
+        """获取会员权益列表"""
+        if self.membership_benefits:
+            try:
+                return json.loads(self.membership_benefits)
+            except (json.JSONDecodeError, TypeError):
+                return []
+        return []
 
 
 class Settings(models.Model):

@@ -1,16 +1,17 @@
-# user/views.py
 from django.contrib.auth.models import Group
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status, generics, permissions, viewsets
 from rest_framework.authtoken.views import ObtainAuthToken
 from django.contrib.auth import get_user_model
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.exceptions import AuthenticationFailed
+from django.utils import timezone
+from datetime import timedelta
 
 from middleware.base_views import BaseViewSet
 from .serializers import UserRegisterSerializer, UserLoginSerializer, UserSerializer, GroupSerializer
 from rest_framework.authtoken.models import Token
 from middleware.utils import ApiResponse
-
-
 
 User = get_user_model()
 
@@ -40,34 +41,63 @@ class RegisterView(generics.CreateAPIView):
             })
         return ApiResponse(code=400, message=serializer.errors)
 
+
 @extend_schema(tags=["用户管理"])
 class CustomLoginView(ObtainAuthToken):
     permission_classes = [permissions.AllowAny]
+
     @extend_schema(
         operation_id="user-login",
-        summary="用户登录",
-        description="用户登录获取认证token",
+        summary="用户登录/注册",
+        description="用户登录获取认证token，如果用户不存在则自动创建",
         request=UserLoginSerializer,
-        responses={200: "登录成功", 401: "认证失败"}
+        responses={200: "登录成功", 201: "注册并登录成功", 400: "参数错误"}
     )
     def post(self, request, *args, **kwargs):
         serializer = UserLoginSerializer(data=request.data)
         if serializer.is_valid():
             username = serializer.validated_data['username']
             password = serializer.validated_data['password']
+
             try:
+
+                # 尝试获取现有用户
                 user = User.objects.get(username=username)
+                # 验证密码
                 if user.check_password(password):
                     token, _ = Token.objects.get_or_create(user=user)
+                    # 设置token过期时间为4小时
+                    token.created = timezone.now()
+                    token.save()
+
                     return ApiResponse(data={
                         'user_id': user.id,
                         'username': user.username,
+                        'user_nickname': user.user_nickname,
                         'token': token.key,
-                        'member_level': user.member_level  # 返回会员等级
-                    })
-                return ApiResponse(code=401, message='密码错误')
+                        'member_level': user.member_level,
+                        'expires_in': 14400  # 4小时，单位秒
+                    }, message='登录成功')
+                else:
+                    return ApiResponse(code=401, message='密码错误')
             except User.DoesNotExist:
-                return ApiResponse(code=401, message='用户不存在')
+                # 用户不存在，自动创建新用户
+                user = User.objects.create_user(
+                    username=username,
+                    password=password
+                )
+                token, _ = Token.objects.get_or_create(user=user)
+                # 设置token过期时间为4小时
+                token.created = timezone.now()
+                token.save()
+                return ApiResponse(data={
+                    'user_id': user.id,
+                    'username': user.username,
+                    'user_nickname': user.user_nickname,
+                    'token': token.key,
+                    'member_level': user.member_level,
+                    'expires_in': 14400  # 4小时，单位秒
+                }, code=201, message='注册并登录成功')
         return ApiResponse(code=400, message=serializer.errors)
 
 @extend_schema(tags=["用户管理"])
@@ -107,3 +137,5 @@ class GroupViewSet(BaseViewSet):
     queryset = Group.objects.all()
     serializer_class = GroupSerializer
     permission_classes = [permissions.IsAdminUser]  # 仅管理员可操作用户组
+
+

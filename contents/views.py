@@ -214,7 +214,7 @@ class ContentViewSet(BaseViewSet):
         except Content.DoesNotExist:
             return ApiResponse(code=400, message="内容不存在")
 
-@extend_schema(tags=["社区动态"])
+@extend_schema(tags=["内容"])
 @extend_schema_view(
    list=extend_schema(summary='获取关注的内容 vip关注',
    parameters=[

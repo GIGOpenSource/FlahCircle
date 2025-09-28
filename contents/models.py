@@ -43,6 +43,7 @@ class Content(models.Model):
     downvote_total = models.IntegerField(blank=True, null=True, default=0)
     publish_time = models.DateTimeField(blank=True, null=True)
     is_vip = models.BooleanField(default=False)
+    duration = models.IntegerField(blank=True, null=True,verbose_name="视频时长，毫秒")
     is_permanent = models.BooleanField(default=False)
     create_time = models.DateTimeField(auto_now_add=True)
     update_time = models.DateTimeField(auto_now=True)

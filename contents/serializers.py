@@ -9,7 +9,7 @@ from user.models import User
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'user_nickname', 'avatar']
+        fields = ['id', 'user_nickname', 'avatar','following_count','user_bio','followers_count']
 
 class ContentSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)

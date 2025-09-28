@@ -75,7 +75,8 @@ MIDDLEWARE = [
 REST_FRAMEWORK = {
     'DATETIME_FORMAT': '%Y-%m-%d %H:%M:%S',
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        # 'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'middleware.token.ExpiringTokenAuthentication',
+        #'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.BasicAuthentication',
         'rest_framework.authentication.TokenAuthentication',
@@ -181,13 +182,15 @@ USE_I18N = True
 
 USE_TZ = True
 
-
+# 会话配置
+SESSION_COOKIE_AGE = 14400  # 4小时（秒）
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # 关闭浏览器时清除会话
+SESSION_SAVE_EVERY_REQUEST = True  # 每次请求都保存会话
+# Token过期配置（如果使用自定义认证类）
+TOKEN_EXPIRE_AFTER_HOURS = 4
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
-
 STATIC_URL = 'static/'
-
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
