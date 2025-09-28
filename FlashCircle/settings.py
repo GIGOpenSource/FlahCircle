@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-yq_opx0pg*%20eawo@$_noqp3uc%pr+3nziej3dfaibs%y2&4&
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = []
 
 
 # Application definition
@@ -139,7 +139,7 @@ if POSTGRES_HOST:
             'USER': os.getenv('POSTGRES_USER', 'flashc'),
             'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'flashc'),
             'HOST': POSTGRES_HOST,
-            'PORT': os.getenv('POSTGRES_PORT', '5433'),
+            'PORT': os.getenv('POSTGRES_PORT', '5432'),
         }
     }
 else:
