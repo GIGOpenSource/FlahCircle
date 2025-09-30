@@ -11,6 +11,12 @@ class User(AbstractUser):
         ('vip', 'VIP用户'),
         ('svip', 'SVIP用户'),
     )
+    USER_STATUS = (
+        (0, '正常'),
+        (1, '禁言'),
+        (2, '冻结'),
+        (3, '其他'),
+    )
     phone = models.CharField(max_length=11, blank=True, null=True, unique=True)
     avatar = models.URLField(blank=True, null=True, verbose_name="头像URL")
     member_level = models.CharField(max_length=10, choices=MEMBER_LEVEL, default='normal')
@@ -23,6 +29,8 @@ class User(AbstractUser):
     tags = models.ManyToManyField('tags.Tag', related_name='users', blank=True, verbose_name="兴趣标签")
     gold_coin = models.PositiveIntegerField(default=0, verbose_name="金币数量")
     vip_days = models.PositiveIntegerField(default=0, verbose_name="会员天数")
+    status = models.IntegerField(choices=USER_STATUS, default=0, verbose_name="用户状态")  # 新增状态字段
+
     # 保留Django内置的groups和user_permissions用于分组权限
     groups = models.ManyToManyField(
         Group,
@@ -70,7 +78,15 @@ class User(AbstractUser):
 
     def is_admin_role(self):
         """判断用户是否为管理员"""
-        return self.member_level == "admin"
+        # 首先检查 member_level 是否为 admin（如果需要支持此方式）
+        if self.member_level == "admin":
+            return True
+
+        # 然后检查是否属于 Admin 组
+        try:
+            return self.groups.filter(name='Admin').exists()
+        except:
+            return False
         # return self.groups.filter(name='Admin').exists()
 
     def get_followers_count(self):

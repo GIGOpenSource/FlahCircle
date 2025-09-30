@@ -1,5 +1,5 @@
 from django.contrib.auth.models import Group
-from drf_spectacular.utils import extend_schema, extend_schema_view
+from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
 from rest_framework import status, generics, permissions, viewsets
 from rest_framework.authtoken.views import ObtainAuthToken
 from django.contrib.auth import get_user_model
@@ -7,11 +7,13 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.exceptions import AuthenticationFailed
 from django.utils import timezone
 from datetime import timedelta
-
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters
 from middleware.base_views import BaseViewSet
+from middleware.permissions import IsAdminRole, IsCreator, IsAdminOrCreator
 from .serializers import UserRegisterSerializer, UserLoginSerializer, UserSerializer, GroupSerializer
 from rest_framework.authtoken.models import Token
-from middleware.utils import ApiResponse
+from middleware.utils import ApiResponse, CustomPagination
 
 User = get_user_model()
 
@@ -45,7 +47,6 @@ class RegisterView(generics.CreateAPIView):
 @extend_schema(tags=["用户管理"])
 class CustomLoginView(ObtainAuthToken):
     permission_classes = [permissions.AllowAny]
-
     @extend_schema(
         operation_id="user-login",
         summary="用户登录/注册",
@@ -58,9 +59,7 @@ class CustomLoginView(ObtainAuthToken):
         if serializer.is_valid():
             username = serializer.validated_data['username']
             password = serializer.validated_data['password']
-
             try:
-
                 # 尝试获取现有用户
                 user = User.objects.get(username=username)
                 # 验证密码
@@ -102,7 +101,15 @@ class CustomLoginView(ObtainAuthToken):
 
 @extend_schema(tags=["用户管理"])
 @extend_schema_view(
-    list=extend_schema(summary="获取用户列表",responses={200: UserSerializer(many=True)}
+    list=extend_schema(summary="获取用户列表",parameters=[
+        OpenApiParameter(name='status', description='账号状态'),
+        OpenApiParameter(name='member_level', description='账号状态'),
+        OpenApiParameter(name='phone', description='电话号'),
+        OpenApiParameter(name='id', description='ID'),
+        OpenApiParameter(name='user_nickname', description='用户名'),
+        OpenApiParameter(name='search', description='模糊搜索字段：id 用户ID、昵称 user_nickname、手机号phone'),
+
+    ], responses={200: UserSerializer(many=True),                                                         }
     ),
     retrieve=extend_schema(summary="获取用户详情,返回是否关注，房间session",responses={200: UserSerializer, 404: "用户不存在"}
     ),
@@ -115,11 +122,34 @@ class CustomLoginView(ObtainAuthToken):
 class UserViewSet(BaseViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    def get_queryset(self):
-        """数据权限过滤"""
-        user = self.request.user
-        return User.objects.all()
+    pagination_class = CustomPagination
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['id','status', 'member_level','phone','id','user_nickname',]
+    # search_fields = ['id','user_nickname', 'phone']
+    def get_permissions(self):
+        """
+        为不同的操作设置不同的权限要求
+        """
+        if self.action in ['update', 'partial_update', 'destroy']:
+            # 管理员或个人创作者可以修改和删除用户
+            permission_classes = [IsAdminOrCreator]
+        else:
+            # 其他操作使用基础认证权限
+            permission_classes = [permissions.IsAuthenticated]
+        return [permission() for permission in permission_classes]
 
+    def list(self, request, *args, **kwargs):
+        # 获取过滤后的查询集
+        queryset = self.filter_queryset(self.get_queryset())
+        # 获取分页器实例
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            # 使用自定义分页响应
+            return self.get_paginated_response(serializer.data)
+        # 如果没有分页，返回普通响应
+        serializer = self.get_serializer(queryset, many=True)
+        return ApiResponse(serializer.data)
 
 
 # 新增用户组管理视图集

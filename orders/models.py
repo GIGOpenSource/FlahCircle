@@ -1,23 +1,16 @@
 from django.db import models
 
+from goods.models import Good
+from payments.models import Payment
 from user.models import User
 
 
 class Order(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='order_user')
-    goods_id = models.IntegerField(blank=True, null=True)
-    goods_name = models.CharField(max_length=255, blank=True, null=True)
-    goods_type = models.CharField(max_length=255, blank=True, null=True)
-    goods_cover = models.CharField(max_length=255, blank=True, null=True)
-    goods_category_name = models.CharField(max_length=255, blank=True, null=True)
-    coin_amount = models.IntegerField(blank=True, null=True)
-    content_id = models.IntegerField(blank=True, null=True)
+    payment = models.ForeignKey(Payment, on_delete=models.CASCADE, related_name='order_payment')
+    good = models.ForeignKey(Good, on_delete=models.CASCADE, related_name='order_good', blank=True, null=True)
     quantity = models.IntegerField(blank=True, default=1)
-    payment_mode = models.CharField(max_length=255, blank=True, null=True)
     cash_amount = models.IntegerField(blank=True, null=True)
-    coin_cost = models.IntegerField(blank=True, null=True)
-    total_amount = models.IntegerField(blank=True, null=True)
-    discount_amount = models.IntegerField(blank=True, null=True)
     final_amount = models.IntegerField(blank=True, null=True)
     pay_status = models.CharField(max_length=255, blank=True, null=True)
     pay_method = models.CharField(max_length=255, blank=True, null=True)

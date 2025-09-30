@@ -30,17 +30,17 @@ class NotificationViewSet(BaseViewSet):
             return NotificationCreateSerializer
         return NotificationSerializer
 
-    def get_queryset(self):
-        """
-        默认只返回当前登录用户的通知
-        """
-        queryset = super().get_queryset()
-        if self.request.user.is_authenticated:
-            queryset = queryset.filter(user=self.request.user)
-        else:
-            # 如果用户未登录，则不返回任何通知
-            queryset = queryset.none()
-        return queryset
+    # def get_queryset(self):
+    #     """
+    #     默认只返回当前登录用户的通知
+    #     """
+    #     queryset = super().get_queryset()
+    #     if self.request.user.is_authenticated:
+    #         queryset = queryset.filter(user=self.request.user)
+    #     else:
+    #         # 如果用户未登录，则不返回任何通知
+    #         queryset = queryset.none()
+    #     return queryset
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)

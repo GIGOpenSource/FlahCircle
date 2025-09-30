@@ -37,7 +37,7 @@ class Follow(models.Model):
             try:
                 followee = User.objects.get(id=self.followee_id)
                 self.followee_nickname = followee.user_nickname
-                self.followee_avatar = followee.avatar.url if followee.avatar else None
+                self.followee_avatar = followee.avatar
             except User.DoesNotExist:
                 pass
 

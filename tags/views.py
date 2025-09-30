@@ -1,19 +1,21 @@
 from rest_framework.decorators import action
 from django.contrib.auth import get_user_model
-
+from django_filters.rest_framework import DjangoFilterBackend
 from middleware.base_views import BaseViewSet
 from middleware.utils import CustomPagination, ApiResponse
 from tags.models import Tag
 from tags.serializers import TagSerializer, UserRecommendationSerializer
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
 from user.models import User
-
+from rest_framework import filters
 UserModel = get_user_model()
 
 @extend_schema_view(
     list=extend_schema(summary='获取兴趣标签列表（分页)',tags=['兴趣标签管理'],
         parameters=[OpenApiParameter(name='follower_id', description='兴趣标签类型过滤'),
-        OpenApiParameter(name='followee_id', description='兴趣标签描述过滤'),]
+        OpenApiParameter(name='followee_id', description='兴趣标签描述过滤'),
+        OpenApiParameter(name='name', description='标签名字描述过滤'),
+        OpenApiParameter(name='status', description='标签状态过滤'),]
     ),
     retrieve=extend_schema(summary='获取兴趣标签详情',tags=['兴趣标签管理']),
     create=extend_schema(summary='创建兴趣标签',tags=['兴趣标签管理']),
@@ -25,8 +27,10 @@ class TagViewSet(BaseViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
     pagination_class = CustomPagination
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['name']
     ordering = ['-usage_count']
+    filterset_fields = ['name', 'status']
 
     @extend_schema(
         summary='推荐博主',

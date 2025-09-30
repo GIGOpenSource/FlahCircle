@@ -20,6 +20,7 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, Sp
 
 from middleware.uploader_data import UploadResourceView
 
+
 urlpatterns = [
     path('api/admin/', admin.site.urls),
     path('api/auth/', include('user.urls')),
@@ -43,6 +44,5 @@ urlpatterns = [
     path('api/comments/', include('comments.urls')),
     path('api/ratings/',include('rating.urls')),
     path('api/upload/', UploadResourceView.as_view(), name='upload_resource'),
-
 ]
 

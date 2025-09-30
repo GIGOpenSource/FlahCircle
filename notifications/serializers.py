@@ -7,7 +7,7 @@ from user.models import User
 class UserNotificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'user_nickname', 'avatar']
+        fields = ['id', 'user_nickname', 'avatar', 'username', 'is_vip']  # 添加 username 和 is_vip 字段
 
 
 class NotificationSerializer(serializers.ModelSerializer):

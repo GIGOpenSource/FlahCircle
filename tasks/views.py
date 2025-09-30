@@ -5,14 +5,15 @@ from django.db import transaction
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
 
 from middleware.base_views import BaseViewSet
-from middleware.utils import ApiResponse
+from middleware.utils import ApiResponse, CustomPagination
 from tasks.models import Reward, Template
 from tasks.serializers import TaskRewardSerializer, TaskTemplateSerializer
-
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters
 
 @extend_schema_view(
     list=extend_schema(
-        summary='获取任务奖励列表（分页)',
+        summary='获取任务奖励列表（分页) 只能看到属于自己的任务',
         tags=['任务奖励管理'],
         parameters=[
             OpenApiParameter(name='status', description='任务奖励状态过滤: pending(待领取), claimed(已领取), completed(已完成)', required=False),
@@ -32,9 +33,16 @@ class RewardViewSet(BaseViewSet):
     def get_queryset(self):
         queryset = super().get_queryset()
         if self.request.user.is_authenticated:
-            # 只返回当前用户的任务奖励
-            queryset = queryset.filter(user=self.request.user)
-        return queryset
+            # 检查用户是否为管理员
+            if self.request.user.is_staff or self.request.user.is_superuser:
+                # 管理员可以查看所有任务奖励
+                return queryset
+            else:
+                # 普通用户只返回自己的任务奖励
+                return queryset.filter(user=self.request.user)
+        else:
+            # 未认证用户不返回任何任务奖励
+            return queryset.none()
 
     @extend_schema(
         summary='领取任务奖励',
@@ -105,7 +113,8 @@ class RewardViewSet(BaseViewSet):
         tags=['任务模板管理'],
         parameters=[
             OpenApiParameter(name='type', description='任务模板类型过滤: daily(每日任务), checkin(签到任务), novice(新手任务)', required=False),
-            OpenApiParameter(name='is_active', description='任务模板是否激活过滤: true(激活), false(未激活)', required=False)
+            OpenApiParameter(name='type', description='', required=False),
+            OpenApiParameter(name='name', description='任务模板 名字', required=False)
         ]
     ),
     retrieve=extend_schema(summary='获取任务模板详情', tags=['任务模板管理']),
@@ -117,10 +126,21 @@ class RewardViewSet(BaseViewSet):
 class TemplateViewSet(BaseViewSet):
     queryset = Template.objects.all()
     serializer_class = TaskTemplateSerializer
+    pagination_class = CustomPagination
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['name', 'type', 'is_active']
 
     def list(self, request, *args, **kwargs):
+        # 获取过滤后的查询集
         queryset = self.filter_queryset(self.get_queryset())
-        serializer = TaskTemplateSerializer(instance=queryset, many=True)
+        # 获取分页器实例
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            # 使用自定义分页响应
+            return self.get_paginated_response(serializer.data)
+        # 如果没有分页，返回普通响应
+        serializer = self.get_serializer(queryset, many=True)
         return ApiResponse(code=200, data=serializer.data, message="任务模板列表获取成功")
 
     def retrieve(self, request, *args, **kwargs):

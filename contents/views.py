@@ -247,9 +247,6 @@ class FollowedContentViewSet(BaseViewSet):
 
         # 获取当前用户ID
         current_user = request.user
-        print("测试手是否调到")
-        print("测试手是否调到")
-        print("测试手是否调到")
         # 获取该用户关注的用户ID列表
         from follows.models import Follow
         followed_users = Follow.objects.filter(

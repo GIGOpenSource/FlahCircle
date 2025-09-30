@@ -7,6 +7,7 @@ class MessageSerializer(serializers.ModelSerializer):
     sender_avatar = serializers.SerializerMethodField()
     receiver_nickname = serializers.SerializerMethodField()
     receiver_avatar = serializers.SerializerMethodField()
+    send_count = serializers.SerializerMethodField()  # 添加发送数量统计字段
 
     class Meta:
         model = Message
@@ -22,6 +23,18 @@ class MessageSerializer(serializers.ModelSerializer):
             except User.DoesNotExist:
                 return None
         return None
+
+    def get_send_count(self, obj):
+        """
+        获取该发送者发送的消息总数
+        """
+        if obj.sender_id:
+            try:
+                # 统计相同sender_id的消息数量
+                return Message.objects.filter(sender_id=obj.sender_id).count()
+            except Exception:
+                return 0
+        return 0
 
     def get_sender_avatar(self, obj):
         if obj.sender_id:

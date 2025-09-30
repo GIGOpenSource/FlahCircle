@@ -7,16 +7,16 @@ from rest_framework import filters
 from middleware.utils import CustomPagination
 from middleware.utils import ApiResponse
 
-
+@extend_schema(tags=["广告管理"])
 @extend_schema_view(
-    list=extend_schema(summary='获取广告列表',tags=['广告管理'],
+    list=extend_schema(summary='获取广告列表',
         parameters=[OpenApiParameter(name='type', description='广告类型过滤'),]
     ),
-    retrieve=extend_schema(summary='获取广告详情',tags=['广告管理']),
-    create=extend_schema(summary='创建广告',tags=['广告管理']),
-    update=extend_schema(summary='更新广告',tags=['广告管理']),
-    partial_update=extend_schema(summary='部分更新广告',tags=['广告管理']),
-    destroy=extend_schema(summary='删除广告',tags=['广告管理'])
+    retrieve=extend_schema(summary='获取广告详情'),
+    create=extend_schema(summary='创建广告'),
+    update=extend_schema(summary='更新广告'),
+    partial_update=extend_schema(summary='部分更新广告'),
+    destroy=extend_schema(summary='删除广告')
 )
 class AdvertisementViewSet(BaseViewSet):
     queryset = Advertisement.objects.all()

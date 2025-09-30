@@ -41,7 +41,7 @@ class UserSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'username', 'user_nickname', 'email', 'phone', 'avatar','likes_count','following_count','followers_count',
             'member_level', 'user_bio', 'groups', 'group_ids', 'date_joined', 'session_id', 'is_follower','is_vip','vip_days','gold_coin',
-            'tags'
+            'tags','status'
         ]
         read_only_fields = ['id', 'username', 'date_joined']
 
@@ -98,21 +98,21 @@ class UserSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         # 允许更新除 username 外的所有字段
+        # 想改的字段添加即可
         instance.user_nickname = validated_data.get('user_nickname', instance.user_nickname)
         instance.email = validated_data.get('email', instance.email)
         instance.phone = validated_data.get('phone', instance.phone)
         instance.avatar = validated_data.get('avatar', instance.avatar)
         instance.member_level = validated_data.get('member_level', instance.member_level)
         instance.user_bio = validated_data.get('user_bio', instance.user_bio)
+        instance.status = validated_data.get('status', instance.status)
         instance.save()
         # 处理标签更新
         if 'tags' in validated_data:
             tags = validated_data.pop('tags')
             instance.tags.set(tags)
-
         instance.save()
         return instance
-
 
 
 class UserRegisterSerializer(serializers.ModelSerializer):

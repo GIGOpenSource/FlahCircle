@@ -40,7 +40,13 @@ class Like(models.Model):
             try:
                 user = User.objects.get(id=self.user_id)
                 self.user_nickname = user.user_nickname
-                self.user_avatar = user.avatar.url if user.avatar else None
+                if isinstance(user.avatar, str):
+                    self.user_avatar = user.avatar
+                elif user.avatar:
+                    self.user_avatar = user.avatar.url
+                else:
+                    self.user_avatar = None
+                self.user_member_level = user.member_level
             except User.DoesNotExist:
                 pass
 

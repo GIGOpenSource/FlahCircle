@@ -19,10 +19,16 @@ class Benefits(models.Model):
         return self.name
 
 class Payment(models.Model):
+    PAY_TYPE = (
+        ('vip', 'VIP购买'),
+        ('gold', '金币购买'),
+        ('content', '内容购买'),
+        ('goods', '商品购买')
+    )
     pay_name = models.CharField(max_length=255, blank=True, null=True,verbose_name='支付名称')
     amount = models.FloatField(blank=True, null=True, default=0, verbose_name='充值原价金额')
     pay_price = models.FloatField(blank=True, null=True, default=0, verbose_name='支付折扣金额')
-    pay_channel = models.CharField(max_length=255, blank=True, null=True,verbose_name='支付渠道对应 vip gold')
+    pay_channel = models.CharField(choices=PAY_TYPE, max_length=255, blank=True, null=True, verbose_name='支付渠道对应 vip gold')
     days_num = models.IntegerField(blank=True, null=True, default=0, verbose_name='充值天数')
     gold_coin = models.IntegerField(blank=True, null=True, default=0, verbose_name='金币数量')
     status = models.CharField(max_length=255, blank=True, null=True)

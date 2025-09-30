@@ -9,22 +9,68 @@ from chat.serializers import MessageSerializer, SessionSerializer, SettingsSeria
 from middleware.base_views import BaseViewSet
 from middleware.utils import ApiResponse, CustomPagination
 
-
+@extend_schema(tags=["聊天室功能"])
 @extend_schema_view(
-    list=extend_schema(summary='获取消息列表 通过receiver_id 聊天室id返回所有对话', tags=['聊天室功能']),
-    retrieve=extend_schema(summary='获取消息详情', tags=['聊天室功能']),
-    create=extend_schema(summary='创建消息', tags=['聊天室功能']),
-    update=extend_schema(summary='更新消息', tags=['聊天室功能']),
-    partial_update=extend_schema(summary='部分更新消息', tags=['聊天室功能']),
-    destroy=extend_schema(summary='删除消息', tags=['聊天室功能'])
+    list=extend_schema(summary='获取消息列表 通过receiver_id 聊天室id返回所有对话',
+           parameters=[
+               OpenApiParameter(name='receiver_id', description='接收者ID过滤', required=False, type=int),
+               OpenApiParameter(name='sender_id', description='发送者ID过滤', required=False, type=int),
+               OpenApiParameter(name='type', description='消息类型过滤', required=False, type=str),
+               OpenApiParameter(name='sender_nickname', description='发送者姓名', required=False, type=str),
+               OpenApiParameter(name='reply_to_id', description='回复消息ID过滤', required=False, type=int),
+               OpenApiParameter(name='search', description='按消息内容搜索', required=False, type=str)
+               ]),
+    retrieve=extend_schema(summary='获取消息详情'),
+    create=extend_schema(summary='创建消息'),
+    update=extend_schema(summary='更新消息'),
+    partial_update=extend_schema(summary='部分更新消息'),
+    destroy=extend_schema(summary='删除消息')
 )
 class MessageViewSet(BaseViewSet):
     queryset = Message.objects.all()
     serializer_class = MessageSerializer
-    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    pagination_class = CustomPagination
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
     filterset_fields = ['receiver_id', 'sender_id', 'type','reply_to_id']
+    search_fields = ['content']
     ordering_fields = ['create_time']
     ordering = ['create_time']
+
+    def get_queryset(self):
+        """
+        重写get_queryset方法，添加sender_nickname过滤逻辑
+        """
+        queryset = super().get_queryset()
+
+        # 获取sender_nickname参数
+        sender_nickname = self.request.query_params.get('sender_nickname', None)
+
+        # 如果传入了sender_nickname参数，则进行过滤
+        if sender_nickname:
+            try:
+                from user.models import User
+                # 查找昵称匹配的用户
+                users = User.objects.filter(user_nickname__icontains=sender_nickname)
+                user_ids = [user.id for user in users]
+                # 过滤这些用户发送的消息
+                queryset = queryset.filter(sender_id__in=user_ids)
+            except Exception:
+                # 如果出现异常，返回空查询集
+                queryset = queryset.none()
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        # 获取过滤后的查询集
+        queryset = self.filter_queryset(self.get_queryset())
+        # 获取分页器实例
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            # 使用自定义分页响应
+            return self.get_paginated_response(serializer.data)
+        # 如果没有分页，返回普通响应
+        serializer = self.get_serializer(queryset, many=True)
+        return ApiResponse(serializer.data)
 
     def perform_create(self, serializer):
         # 自动设置发送者ID为当前登录用户
@@ -211,3 +257,4 @@ class SessionViewSet(BaseViewSet):
 class SettingsViewSet(BaseViewSet):
     queryset = Settings.objects.all()
     serializer_class = SettingsSerializer
+

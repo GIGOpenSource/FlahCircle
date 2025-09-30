@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-yq_opx0pg*%20eawo@$_noqp3uc%pr+3nziej3dfaibs%y2&4&
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -58,10 +58,12 @@ INSTALLED_APPS = [
     'tasks',
     'comments',
     'rating',
+    'corsheaders',
 ]
 
 AUTH_USER_MODEL = 'user.User'
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -96,7 +98,7 @@ REST_FRAMEWORK = {
     'DEFAULT_RESPONSE_CLASS': 'middleware.utils.ApiResponse',
     'EXCEPTION_HANDLER': 'middleware.utils.custom_exception_handler',
 }
-ALLOWED_HOSTS = ['*']
+
 ROOT_URLCONF = 'FlashCircle.urls'
 AUTH_USER_MODEL = 'user.User'
 TEMPLATES = [
@@ -138,8 +140,8 @@ if POSTGRES_HOST:
             'NAME': os.getenv('POSTGRES_DB', 'flashc'),
             'USER': os.getenv('POSTGRES_USER', 'flashc'),
             'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'flashc'),
-            'HOST': os.getenv('POSTGRES_HOST', 'db'),
-            'PORT': os.getenv('POSTGRES_PORT', '5432'),
+            'HOST': os.getenv('POSTGRES_HOST', 'localhost'),
+            'PORT': os.getenv('POSTGRES_PORT', '5433'),
         }
     }
 else:
@@ -194,3 +196,12 @@ STATIC_URL = 'static/'
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_METHODS = [
+    "DELETE",
+    "GET",
+    "OPTIONS",
+    "PATCH",
+    "POST",
+    "PUT",
+]

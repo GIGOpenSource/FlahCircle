@@ -38,7 +38,6 @@ class CustomPagination(PageNumberPagination):
     max_page_size = 999  # 最大每页条数限制
 
     def get_paginated_response(self, data):
-        print("分页查询")
         # 现在这个方法会在分页生效时被自动调用
         return ApiResponse({
             'pagination': {

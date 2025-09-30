@@ -13,16 +13,16 @@ from societies.serializers import SocialDynamicSerializer, SocialDynamicWithFoll
 
 @extend_schema(tags=["社区动态"])
 @extend_schema_view(
-    list=extend_schema(summary='获取动态视频列表，关注点赞收藏',tags=['社区动态'],
+    list=extend_schema(summary='获取动态视频列表，关注点赞收藏',
         parameters=[OpenApiParameter(name='type', description='视频分类 长短视频'),
         OpenApiParameter(name='tabs', description='暂时不用'),
         OpenApiParameter(name='ordering',description='排序字段，例如: -like_count(最热), -create_time(最新)'),]
     ),
-    retrieve=extend_schema(summary='获取动态视频详情',tags=['社区动态']),
-    create=extend_schema(summary='创建动态视频',tags=['社区动态']),
-    update=extend_schema(summary='更新动态视频',tags=['社区动态']),
-    partial_update=extend_schema(summary='部分更新动态视频',tags=['社区动态']),
-    destroy=extend_schema(summary='删除动态视频',tags=['社区动态'])
+    retrieve=extend_schema(summary='获取动态视频详情'),
+    create=extend_schema(summary='创建动态视频'),
+    update=extend_schema(summary='更新动态视频'),
+    partial_update=extend_schema(summary='部分更新动态视频'),
+    destroy=extend_schema(summary='删除动态视频')
 )
 class DynamicViewSet(BaseViewSet):
     queryset = Dynamic.objects.all()
