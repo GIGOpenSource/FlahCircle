@@ -16,9 +16,11 @@ RUN apt-get update \
         build-essential \
     && rm -rf /var/lib/apt/lists/*
 
+
 # 复制依赖文件并安装 Python 依赖
 COPY req.txt requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
+
 
 # 复制项目文件
 COPY . .
