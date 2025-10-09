@@ -140,8 +140,8 @@ if POSTGRES_HOST:
             'NAME': os.getenv('POSTGRES_DB', 'flashc'),
             'USER': os.getenv('POSTGRES_USER', 'flashc'),
             'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'flashc'),
-            'HOST': os.getenv('POSTGRES_HOST', '192.168.77.222'),
-            'PORT': os.getenv('POSTGRES_PORT', '5435'),
+            'HOST': os.getenv('POSTGRES_HOST', 'localhost'),
+            'PORT': os.getenv('POSTGRES_PORT', '5432'),
         }
     }
 else:
