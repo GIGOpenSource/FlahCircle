@@ -8,10 +8,10 @@ services:
       python manage.py makemigrations &&
       python manage.py migrate --noinput && 
       python manage.py runserver 0.0.0.0:8000"
-#    ports:
-#      - "10080:8000"
-    expose:
-      - "8000"
+    ports:
+      - "10080:8000"
+#    expose:
+#      - "8000"
     volumes:
       - ./staticfiles:/app/staticfiles
     environment:
@@ -27,21 +27,21 @@ services:
     networks:
       - flashc_net
 
-  # 前端服务
-  frontend:
-    image: nginx:alpine
-    container_name: flashc_font
-    ports:
-      - "8080:80"  # GIG-X 前端
-      - "8081:80"  # GIG-admin 后端
-    volumes:
-      - ./dist:/usr/share/nginx/html/dist  # 前端打包文件
-      - ./admin-dist:/usr/share/nginx/html/admin-dist  # 后端打包文件
-      - ./nginx.conf:/etc/nginx/nginx.conf
-    depends_on:
-      - web
-    networks:
-      - flashc_net
+#  # 前端服务
+#  frontend:
+#    image: nginx:alpine
+#    container_name: flashc_font
+#    ports:
+#      - "8080:80"  # GIG-X 前端
+#      - "8081:80"  # GIG-admin 后端
+#    volumes:
+#      - ./dist:/usr/share/nginx/html/dist  # 前端打包文件
+#      - ./admin-dist:/usr/share/nginx/html/admin-dist  # 后端打包文件
+#      - ./nginx.conf:/etc/nginx/nginx.conf
+#    depends_on:
+#      - web
+#    networks:
+#      - flashc_net
 
   # 数据库服务
   db:
