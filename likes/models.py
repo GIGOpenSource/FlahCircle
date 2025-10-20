@@ -43,7 +43,7 @@ class Like(models.Model):
                 if isinstance(user.avatar, str):
                     self.user_avatar = user.avatar
                 elif user.avatar:
-                    self.user_avatar = user.avatar.url
+                    self.user_avatar = user.avatar
                 else:
                     self.user_avatar = None
                 self.user_member_level = user.member_level

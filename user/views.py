@@ -75,6 +75,7 @@ class CustomLoginView(ObtainAuthToken):
                         'user_nickname': user.user_nickname,
                         'token': token.key,
                         'member_level': user.member_level,
+                        'is_staff':user.is_staff,
                         'expires_in': 14400  # 4小时，单位秒
                     }, message='登录成功')
                 else:

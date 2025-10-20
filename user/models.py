@@ -18,7 +18,7 @@ class User(AbstractUser):
         (3, '其他'),
     )
     phone = models.CharField(max_length=11, blank=True, null=True, unique=True)
-    avatar = models.URLField(blank=True, null=True, verbose_name="头像URL")
+    avatar = models.CharField(blank=True, null=True, verbose_name="头像URL")
     member_level = models.CharField(max_length=10, choices=MEMBER_LEVEL, default='normal')
     user_bio = models.TextField(blank=True, null=True, verbose_name="个人简介")  # 新增个人简介
     user_nickname = models.CharField(max_length=50, blank=True, null=True, verbose_name="昵称")
