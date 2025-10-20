@@ -9,9 +9,7 @@ services:
       python manage.py migrate --noinput && 
       python manage.py runserver 0.0.0.0:8000"
     ports:
-        - "10080:8000"
-    expose:
-      - "8000"
+      - "10080:8000"
     volumes:
       - ./staticfiles:/app/staticfiles
     environment:
@@ -20,13 +18,19 @@ services:
       - POSTGRES_HOST=db
       - POSTGRES_DB=flashc
       - POSTGRES_USER=flashc
-      - POSTGRES_PASSWORD=flashc
       - POSTGRES_PORT=5432
+      # 引用阿里云 OSS 变量（从 .env 读取）
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - ALIYUN_ACCESS_KEY_ID=${ALIYUN_ACCESS_KEY_ID}
+      - ALIYUN_ACCESS_KEY_SECRET=${ALIYUN_ACCESS_KEY_SECRET}
+      - ALIYUN_OSS_ENDPOINT=${ALIYUN_OSS_ENDPOINT}
+      - ALIYUN_OSS_BUCKET_NAME=${ALIYUN_OSS_BUCKET_NAME}
     depends_on:
       - db
     networks:
       - flashc_net
 
+  # 数据库服务
   db:
     image: postgres:16-alpine
     container_name: flahcicle_db

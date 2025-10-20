@@ -24,7 +24,7 @@ staticfiles/
 
 # Secrets / Environment
 .env
-.env.*
+.env
 *.env
 !.env.example
 *.key
