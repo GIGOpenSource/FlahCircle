@@ -131,6 +131,11 @@ class ContentCommentViewSet(CommentViewSet):
             content.save(update_fields=['comment_count'])
         except Content.DoesNotExist:
             pass
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.exception("更新Content评论数时出错")
+
     def perform_destroy(self, instance):
         # 减少Content表的comment_count
         target_id = instance.target_id

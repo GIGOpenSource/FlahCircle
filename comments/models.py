@@ -31,7 +31,7 @@ class Comment(models.Model):
             try:
                 user = User.objects.get(id=self.user_id)
                 self.user_nickname = user.user_nickname
-                self.user_avatar = user.avatar.url if user.avatar else None
+                self.user_avatar = user.avatar if user.avatar else None
             except User.DoesNotExist:
                 pass
 
