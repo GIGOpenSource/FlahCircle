@@ -18,8 +18,13 @@ services:
       - POSTGRES_HOST=db
       - POSTGRES_DB=flashc
       - POSTGRES_USER=flashc
-      - POSTGRES_PASSWORD=flashc
       - POSTGRES_PORT=5432
+      # 引用阿里云 OSS 变量（从 .env 读取）
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - ALIYUN_ACCESS_KEY_ID=${ALIYUN_ACCESS_KEY_ID}
+      - ALIYUN_ACCESS_KEY_SECRET=${ALIYUN_ACCESS_KEY_SECRET}
+      - ALIYUN_OSS_ENDPOINT=${ALIYUN_OSS_ENDPOINT}
+      - ALIYUN_OSS_BUCKET_NAME=${ALIYUN_OSS_BUCKET_NAME}
     depends_on:
       - db
     networks:

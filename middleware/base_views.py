@@ -41,7 +41,7 @@ class BaseViewSet(viewsets.ModelViewSet):
                 code=201
             )
         except ValidationError as e:
-            return ApiResponse(code=400, message=e.detail)
+            return ApiResponse(code=400, message=str(e.detail))
         except Exception as e:
             return ApiResponse(code=500, message=f"创建失败: {str(e)}")
 

@@ -120,6 +120,10 @@ class ContentCommentViewSet(CommentViewSet):
     def perform_create(self, serializer):
         # 保存评论并更新Content的comment_count
         comment = serializer.save(user_id=self.request.user.id, type='content')
+        import logging
+        logger = logging.getLogger(__name__)
+        print(f"创建的实例数据: {comment}")
+        print(f"序列化器数据: {serializer.data}")
         # 更新Content表的comment_count
         try:
             content = Content.objects.get(id=comment.target_id)
