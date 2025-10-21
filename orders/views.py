@@ -359,7 +359,8 @@ class OrderViewSet(BaseViewSet):
                 else:
                     # 如果没有vip_days，则从现在开始计算
                     user.vip_days = timezone.now() + timedelta(days=payment.days_num)
-                user.save(update_fields=['vip_days'])
+                user.is_vip = True
+                user.save(update_fields=['vip_days','is_vip'])
             elif payment.pay_channel == 'gold':
                 # 金币充值，增加金币数量
                 if payment.gold_coin and payment.gold_coin > 0:
