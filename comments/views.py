@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from rest_framework.decorators import action
 from django.db import transaction
 from django_filters.rest_framework import DjangoFilterBackend
@@ -5,7 +7,7 @@ from rest_framework import filters
 from comments.models import Comment
 from comments.serializers import CommentSerializer
 from drf_spectacular.utils import extend_schema_view, extend_schema, OpenApiParameter
-# from user.models import
+from user.models import UserPurchase
 from contents.models import Content
 from middleware.base_views import BaseViewSet
 from middleware.utils import ApiResponse, CustomPagination
@@ -101,6 +103,7 @@ class ContentCommentViewSet(CommentViewSet):
     """
     专门处理内容评论的ViewSet
     """
+
     def get_user_context_data(self, request):
         """获取当前用户点赞的评论数据"""
         context_data = {
@@ -168,8 +171,21 @@ class ContentCommentViewSet(CommentViewSet):
         user = request.user
         if user.gold_coin < video.price:
             return ApiResponse(code=400, message="金币不足")
-        user.gold_coin -= video.price
-        user.save(update_fields=['gold_coin'])
+        try:
+            user.gold_coin -= video.price
+            user.save(update_fields=['gold_coin'])
+            userPurchase = UserPurchase.objects.create()
+            userPurchase.content_type = "content"
+            userPurchase.user = user
+            userPurchase.object_id = content_id
+            userPurchase.purchase_time = datetime.now()
+            userPurchase.price = video.price
+            userPurchase.save()
+        except Exception as e:
+            print(repr(e))
+            return ApiResponse(code=500, message="购买失败")
+        return ApiResponse(message="购买成功", data={'remaining_coins': user.gold_coin})
+
 
 @extend_schema(tags=["评论管理 动态"])
 @extend_schema_view(
