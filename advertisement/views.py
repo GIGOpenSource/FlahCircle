@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from advertisement.models import Advertisement
 from advertisement.serializers import AdvertisementSerializer
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
@@ -6,6 +8,8 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
 from middleware.utils import CustomPagination
 from middleware.utils import ApiResponse
+from user.models import UserPurchase
+
 
 @extend_schema(tags=["广告管理"])
 @extend_schema_view(
@@ -40,3 +44,37 @@ class AdvertisementViewSet(BaseViewSet):
         # 如果没有分页，返回普通响应
         serializer = self.get_serializer(queryset, many=True)
         return ApiResponse(serializer.data)
+
+    from rest_framework.decorators import action
+    from django.db import transaction
+
+    @action(detail=True, methods=['post'], url_path='adv_purchase')
+    @transaction.atomic
+    def perform_video(self, request, pk=None):
+        """
+       购买视频访问权限
+       参数:
+       - id: 视频ID
+       """
+        try:
+            # 获取视频对象
+            advertise = Advertisement.objects.get(pk=pk, is_vip=True)  # 假设is_vip字段标识VIP视频
+        except advertise.DoesNotExist:
+            return ApiResponse(code=404, message="广告不存在")
+        user = request.user
+        if user.gold_coin < advertise.price:
+            return ApiResponse(code=400, message="金币不足,无法购买")
+        try:
+            user.gold_coin -= advertise.price
+            user.save(update_fields=['gold_coin'])
+            userPurchase = UserPurchase.objects.create()
+            userPurchase.content_type = "advertise"
+            userPurchase.user = user
+            userPurchase.object_id = pk
+            userPurchase.purchase_time = datetime.now()
+            userPurchase.price = advertise.price
+            userPurchase.save()
+        except Exception as e:
+            print(repr(e))
+            return ApiResponse(code=500, message="购买失败")
+        return ApiResponse(message="购买成功", data={'remaining_coins': user.gold_coin})
