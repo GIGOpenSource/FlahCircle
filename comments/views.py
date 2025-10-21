@@ -160,7 +160,7 @@ class ContentCommentViewSet(CommentViewSet):
         """
        购买视频访问权限
        参数:
-       - video_id: 视频ID
+       - id: 视频ID
        """
         try:
             # 获取视频对象
@@ -261,11 +261,12 @@ class DynamicCommentViewSet(CommentViewSet):
 
     @action(detail=True, methods=['post'], url_path='purchase')
     @transaction.atomic
-    def perform_video(self, request, pk=None):
+    def perform_dynamic(self, request, pk=None):
         """
        购买动态访问权限
        参数:
-       - video_id: 视频ID
+       - id: 动态ID
+
        """
         try:
             # 获取视频对象
