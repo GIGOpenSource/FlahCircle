@@ -1,14 +1,15 @@
+from rest_framework.decorators import action
+from django.db import transaction
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
 from comments.models import Comment
 from comments.serializers import CommentSerializer
 from drf_spectacular.utils import extend_schema_view, extend_schema, OpenApiParameter
-
+# from user.models import
 from contents.models import Content
 from middleware.base_views import BaseViewSet
 from middleware.utils import ApiResponse, CustomPagination
 from societies.models import Dynamic
-
 
 
 class CommentViewSet(BaseViewSet):
@@ -19,6 +20,7 @@ class CommentViewSet(BaseViewSet):
     filterset_fields = ['target_id', 'type', 'parent_comment_id']
     search_fields = ['content', 'user_nickname']
     ordering_fields = ['create_time', 'like_count']
+
     # ordering = ['-create_time']
 
     def get_queryset(self):
@@ -28,6 +30,7 @@ class CommentViewSet(BaseViewSet):
         if target_id is not None:
             queryset = queryset.filter(target_id=target_id)
         return queryset
+
     def perform_create(self, serializer):
         # 自动设置当前用户信息
         serializer.save(user_id=self.request.user.id)
@@ -76,6 +79,7 @@ class CommentViewSet(BaseViewSet):
             context_data['liked_comment_ids'] = list(liked_comments)
 
         return context_data
+
 
 @extend_schema(tags=["评论管理 内容"])
 @extend_schema_view(
@@ -148,6 +152,26 @@ class ContentCommentViewSet(CommentViewSet):
         except Content.DoesNotExist:
             pass
 
+    @action(detail=True, methods=['post'], url_path='purchase')
+    @transaction.atomic
+    def perform_video(self, request):
+        """
+       购买视频访问权限
+       参数:
+       - video_id: 视频ID
+       """
+        content_id = request.data.get('content_id')
+        try:
+            # 获取视频对象
+            video = Content.objects.get(id=content_id, is_vip=True)  # 假设is_vip字段标识VIP视频
+        except Content.DoesNotExist:
+            return ApiResponse(code=404, message="视频不存在")
+        user = request.user
+        if user.gold_coin < video.price:
+            return ApiResponse(code=400, message="金币不足")
+        user.gold_coin -= video.price
+        user.save(update_fields=['gold_coin'])
+
 @extend_schema(tags=["评论管理 动态"])
 @extend_schema_view(
     list=extend_schema(
@@ -168,6 +192,7 @@ class DynamicCommentViewSet(CommentViewSet):
     """
     专门处理动态评论的ViewSet
     """
+
     def get_queryset(self):
         """
         默认只获取动态评论（type='dynamic'）和顶级评论（parent_comment_id=0）
