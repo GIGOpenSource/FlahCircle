@@ -25,7 +25,7 @@ class User(AbstractUser):
     followers_count = models.PositiveIntegerField(default=0, verbose_name="粉丝数量")
     following_count = models.PositiveIntegerField(default=0, verbose_name="关注别人数量")
     likes_count = models.PositiveIntegerField(default=0, verbose_name="获赞数量")
-    is_vip = models.BooleanField(default=True, verbose_name="用户是否为vip")
+    is_vip = models.BooleanField(default=False, verbose_name="用户是否为vip")
     tags = models.ManyToManyField('tags.Tag', related_name='users', blank=True, verbose_name="兴趣标签")
     gold_coin = models.PositiveIntegerField(default=0, verbose_name="金币数量")
     # vip_days = models.PositiveIntegerField(default=0, verbose_name="会员天数")
