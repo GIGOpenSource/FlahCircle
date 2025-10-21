@@ -12,24 +12,23 @@ class UserSerializer(serializers.ModelSerializer):
 class SocialDynamicSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
     is_purchase = serializers.SerializerMethodField()
-
     def get_is_purchase(self, obj):
         """
         获取当前用户是否购买了该内容
         """
         request = self.context.get('request')
-        if not request or not request.user.is_authenticated:
-            return False
-
-        try:
-            from user.models import UserPurchase
-            return UserPurchase.objects.filter(
-                user_id=request.user.id,
-                content_type='content',
-                object_id=obj.prefixed_id
-            ).exists()
-        except Exception:
-            return False
+        if request and request.user.is_authenticated:
+            # 检查用户是否已购买该内容
+            try:
+                from user.models import UserPurchase
+                return UserPurchase.objects.filter(
+                    user_id=request.user.id,
+                    content_type='content',
+                    object_id=obj.prefixed_id
+                ).exists()
+            except:
+                return False
+        return False
     class Meta:
         model = Dynamic
         fields = '__all__'
