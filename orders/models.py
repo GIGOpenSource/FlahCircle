@@ -29,6 +29,7 @@ class Order(models.Model):
     pay_money = models.IntegerField(blank=True, null=True)  # 实际支付金额
     notify_status = models.CharField(max_length=255, blank=True, null=True)  # 回调状态
     oid = models.CharField(max_length=255, blank=True, null=True)  # 支付平台订单号
+    pay_channel = models.CharField(max_length=30, blank=True, null=True) # 支付渠道
     create_time = models.DateTimeField(auto_now_add=True)
     update_time = models.DateTimeField(auto_now=True)
 
