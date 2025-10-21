@@ -52,6 +52,7 @@ class Content(models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True,default=0.00)
     latitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True, verbose_name="纬度")
     longitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True, verbose_name="经度")
+    is_free = models.BooleanField(default=False,verbose_name="是否免费视频")
     class Meta:
         db_table = 't_content'
         ordering = ['-create_time']  # 修改为按创建时间倒序
