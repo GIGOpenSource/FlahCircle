@@ -19,23 +19,24 @@ class ContentSerializer(serializers.ModelSerializer):
         required=False
     )
     is_purchase = serializers.SerializerMethodField()
+
     def get_is_purchase(self, obj):
         """
         获取当前用户是否购买了该内容
         """
         request = self.context.get('request')
-        if request and request.user.is_authenticated:
-            # 检查用户是否已购买该内容
-            try:
-                from user.models import UserPurchase
-                return UserPurchase.objects.filter(
-                    user_id=request.user.id,
-                    content_type='content',
-                    object_id=obj.prefixed_id
-                ).exists()
-            except:
-                return False
-        return False
+        if not request or not request.user.is_authenticated:
+            return False
+
+        try:
+            from user.models import UserPurchase
+            return UserPurchase.objects.filter(
+                user_id=request.user.id,
+                content_type='content',
+                object_id=obj.prefixed_id
+            ).exists()
+        except Exception:
+            return False
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -47,6 +48,8 @@ class ContentSerializer(serializers.ModelSerializer):
         data['share_count'] = self.format_number(data.get('share_count', 0))
         data['score_count'] = self.format_number(data.get('score_count', 0))
         data['score_total'] = self.format_number(data.get('score_total', 0))
+        data['is_purchase'] = self.get_is_purchase(instance)
+
         # 处理标签信息的序列化
         if 'tags' in data and instance.tags.exists():
             data['tags'] = [
@@ -85,6 +88,25 @@ class ContentWithFollowSerializer(serializers.ModelSerializer):
     is_favourites = serializers.SerializerMethodField()
     is_downvoted = serializers.SerializerMethodField()
     tags = serializers.SerializerMethodField()
+    is_purchase = serializers.SerializerMethodField()
+
+    def get_is_purchase(self, obj):
+        """
+        获取当前用户是否购买了该内容
+        """
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            return False
+
+        try:
+            from user.models import UserPurchase
+            return UserPurchase.objects.filter(
+                user_id=request.user.id,
+                content_type='content',
+                object_id=obj.prefixed_id
+            ).exists()
+        except Exception:
+            return False
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
