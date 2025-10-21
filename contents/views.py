@@ -16,6 +16,7 @@ from drf_spectacular.utils import extend_schema_view, extend_schema, OpenApiPara
 
 from middleware.utils import ApiResponse, CustomPagination
 from tags.models import Tag
+from user.models import User
 
 
 @extend_schema_view(
@@ -314,3 +315,40 @@ class FollowedContentViewSet(BaseViewSet):
         # 如果没有分页，返回普通响应
         serializer = ContentWithFollowSerializer(queryset, many=True, context=context_data)
         return ApiResponse(serializer.data)
+
+    @extend_schema(
+        summary='关注为空推荐标签用户',
+        tags=['内容']
+    )
+    @action(detail=False, methods=['get'], url_path='recommend_tag_users')
+    def recommend_tag_users(self, request):
+        """
+        推荐具有相似标签的用户发布的内容
+        通过当前用户关注的标签，查找其他也关注相同标签的用户发布的内容
+        """
+        # 检查用户是否已认证
+        if not request.user.is_authenticated:
+            return ApiResponse(code=401, message="用户未认证")
+
+        # 获取当前用户
+        current_user = request.user
+        # 获取当前用户关注的标签
+        user_tags = current_user.tags.all()
+
+        if user_tags.exists():
+            # 如果用户有关注标签，查找关注了相同标签的其他用户
+            recommended_users = User.objects.filter(
+                tags__in=user_tags
+            ).exclude(
+                id=current_user.id  # 排除当前用户自己
+            ).distinct()
+        else:
+            # 如果用户没有关注任何标签，返回following_count数量最大的前5个用户
+            recommended_users = User.objects.exclude(
+                id=current_user.id  # 排除当前用户自己
+            ).order_by('-following_count')[:5]
+
+        # 使用UserSerializer序列化用户数据
+        from user.serializers import UserSerializer
+        serializer = UserSerializer(recommended_users, many=True)
+        return ApiResponse(data=serializer.data, message="推荐用户获取成功")
