@@ -366,7 +366,7 @@ class OrderViewSet(BaseViewSet):
                     user.gold_coin += payment.gold_coin
                     user.save(update_fields=['gold_coin'])
             order.save(update_fields=[
-                'pay_status', 'pay_time', 'notify_status','pay_channel'
+                'pay_status', 'pay_time', 'notify_status',
             ])
         # 准备返回的订单数据
         order_data = {
