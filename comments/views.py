@@ -97,7 +97,6 @@ class ContentCommentViewSet(CommentViewSet):
     """
     专门处理内容评论的ViewSet
     """
-
     def get_user_context_data(self, request):
         """获取当前用户点赞的评论数据"""
         context_data = {
@@ -185,7 +184,6 @@ class DynamicCommentViewSet(CommentViewSet):
             'request': request,
             'liked_comment_ids': []
         }
-
         if request.user.is_authenticated:
             # 获取点赞数据 - 当前用户点赞的评论ID列表
             from likes.models import Like
@@ -214,7 +212,6 @@ class DynamicCommentViewSet(CommentViewSet):
         # 减少Dynamic表的comment_count
         target_id = instance.target_id
         super().perform_destroy(instance)
-
         try:
             dynamic = Dynamic.objects.get(id=target_id)
             dynamic.comment_count = max(0, dynamic.comment_count - 1)

@@ -136,17 +136,17 @@ class User(AbstractUser):
 
 
 
-# class UserPurchase(models.Model):
-#     PURCHASE_TYPES = (
-#         ('content', '内容'),
-#         ('dynamic', '动态'),
-#     )
-#     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='purchases')
-#     # 使用 GenericForeignKey 支持关联不同类型的对象
-#     content_type = models.CharField(max_length=20, choices=PURCHASE_TYPES)
-#     object_id = models.CharField(max_length=255)  # 存储 Content 或 Dynamic 的 prefixed_id
-#     purchase_time = models.DateTimeField(auto_now_add=True)
-#     price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
-#     class Meta:
-#         unique_together = ('user', 'content_type', 'object_id')
-#         db_table = 'user_purchases'
+class UserPurchase(models.Model):
+    PURCHASE_TYPES = (
+        ('content', '内容'),
+        ('dynamic', '动态'),
+    )
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='purchases')
+    # 使用 GenericForeignKey 支持关联不同类型的对象
+    content_type = models.CharField(max_length=20, choices=PURCHASE_TYPES,verbose_name='content,dynamic')
+    object_id = models.IntegerField(verbose_name='关联内容ID', db_index=True)
+    purchase_time = models.DateTimeField(auto_now_add=True)
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    class Meta:
+        unique_together = ('user', 'content_type', 'object_id')
+        db_table = 't_user_purchases'
