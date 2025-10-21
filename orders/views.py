@@ -14,13 +14,13 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema_view, extend_schema, OpenApiParameter
 from rest_framework.views import APIView
-
+from django_filters.rest_framework import DjangoFilterBackend
 from middleware.base_views import BaseViewSet
 from middleware.utils import CustomPagination, ApiResponse
 from orders.models import Order
 from orders.serializers import OrderSerializer
 from payments.models import Settings, Payment
-
+from rest_framework import filters
 
 @extend_schema(tags=["订单管理"])
 @extend_schema_view(
@@ -37,6 +37,12 @@ class OrderViewSet(BaseViewSet):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
     pagination_class = CustomPagination
+
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['pay_channel']
+    # search_fields = ['name', 'title', 'description']
+    # ordering_fields = ['create_time', 'update_time', 'sort_order']
+    ordering = ['-create_time']
 
     def _get_client_ip(self, request):
         """
