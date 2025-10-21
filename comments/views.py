@@ -169,7 +169,7 @@ class ContentCommentViewSet(CommentViewSet):
             return ApiResponse(code=404, message="视频不存在")
         user = request.user
         if user.gold_coin < video.price:
-            return ApiResponse(code=400, message="金币不足")
+            return ApiResponse(code=400, message="金币不足,无法购买")
         try:
             user.gold_coin -= video.price
             user.save(update_fields=['gold_coin'])
@@ -258,3 +258,34 @@ class DynamicCommentViewSet(CommentViewSet):
             dynamic.save(update_fields=['comment_count'])
         except Dynamic.DoesNotExist:
             pass
+
+    @action(detail=True, methods=['post'], url_path='purchase')
+    @transaction.atomic
+    def perform_video(self, request, pk=None):
+        """
+       购买动态访问权限
+       参数:
+       - video_id: 视频ID
+       """
+        try:
+            # 获取视频对象
+            video = Dynamic.objects.get(pk=pk, is_vip=True)  # 假设is_vip字段标识VIP视频
+        except Dynamic.DoesNotExist:
+            return ApiResponse(code=404, message="动态不存在")
+        user = request.user
+        if user.gold_coin < video.price:
+            return ApiResponse(code=400, message="金币不足,无法购买")
+        try:
+            user.gold_coin -= video.price
+            user.save(update_fields=['gold_coin'])
+            userPurchase = UserPurchase.objects.create()
+            userPurchase.content_type = "dynamic"
+            userPurchase.user = user
+            userPurchase.object_id = pk
+            userPurchase.purchase_time = datetime.now()
+            userPurchase.price = video.price
+            userPurchase.save()
+        except Exception as e:
+            print(repr(e))
+            return ApiResponse(code=500, message="购买失败")
+        return ApiResponse(message="购买成功", data={'remaining_coins': user.gold_coin})
