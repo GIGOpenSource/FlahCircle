@@ -1,3 +1,5 @@
+import math
+
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema_view, extend_schema, OpenApiParameter
 from rest_framework import filters
@@ -16,6 +18,8 @@ from societies.serializers import SocialDynamicSerializer, SocialDynamicWithFoll
     list=extend_schema(summary='获取动态视频列表，关注点赞收藏',
         parameters=[OpenApiParameter(name='type', description='视频分类 长短视频'),
         OpenApiParameter(name='tabs', description='暂时不用'),
+        OpenApiParameter(name='same_city', description='同城筛选: true(仅同城), false或不传(全部)',
+                             required=False),
         OpenApiParameter(name='ordering',description='排序字段，例如: -like_count(最热), -create_time(最新)'),]
     ),
     retrieve=extend_schema(summary='获取动态视频详情'),
@@ -82,7 +86,25 @@ class DynamicViewSet(BaseViewSet):
             else:
                 # 如果用户未认证，返回空查询集
                 queryset = queryset.none()
-
+        same_city = self.request.query_params.get('same_city', None)
+        if same_city and same_city.lower() == 'true' and self.request.user.is_authenticated:
+            # 获取用户经纬度
+            user_latitude = getattr(self.request.user, 'latitude', None)
+            user_longitude = getattr(self.request.user, 'longitude', None)
+            if user_latitude and user_longitude:
+                # 使用经纬度计算100公里范围内的内容
+                earth_radius = 6371
+                # 计算纬度范围（1度约等于111公里）
+                lat_degree_range = 100 / 111.0
+                # 计算经度范围（需要考虑纬度影响）
+                lon_degree_range = 100 / (111.0 * math.cos(math.radians(float(user_latitude))))
+                # 筛选范围内的内容
+                queryset = queryset.filter(
+                    latitude__range=(float(user_latitude) - lat_degree_range,
+                                     float(user_latitude) + lat_degree_range),
+                    longitude__range=(float(user_longitude) - lon_degree_range,
+                                      float(user_longitude) + lon_degree_range)
+                ).exclude(latitude__isnull=True).exclude(longitude__isnull=True)
         return queryset
 
     def list(self, request, *args, **kwargs):

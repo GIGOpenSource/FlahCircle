@@ -1,3 +1,5 @@
+import math
+
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, filters
 from rest_framework.decorators import action
@@ -20,6 +22,8 @@ from middleware.utils import ApiResponse, CustomPagination
             OpenApiParameter(name='is_vip', description='是否vip视频 true、false'),
             OpenApiParameter(name='time_range', description='时间范围: month(本月), half_year(半年), longer(更久)', required=False),
             OpenApiParameter(name='paid_only', description='仅显示付费内容: true(仅付费), false或不传(全部)',
+                             required=False),
+            OpenApiParameter(name='same_city', description='同城筛选: true(仅同城), false或不传(全部)',
                              required=False),
             OpenApiParameter(name='ordering',description='首页：-like_count(最热), -create_time(最新)'
                                                          '||发现: -like_count(精选), -create_time(发现)')
@@ -58,6 +62,27 @@ class ContentViewSet(BaseViewSet):
         if paid_only and paid_only.lower() == 'true':
             # 筛选price > 0的内容
             queryset = queryset.filter(price__gt=0)
+
+        same_city = self.request.query_params.get('same_city', None)
+        if same_city and same_city.lower() == 'true' and self.request.user.is_authenticated:
+            # 获取用户经纬度
+            user_latitude = getattr(self.request.user, 'latitude', None)
+            user_longitude = getattr(self.request.user, 'longitude', None)
+            if user_latitude and user_longitude:
+                # 使用经纬度计算100公里范围内的内容
+                earth_radius = 6371
+                # 计算纬度范围（1度约等于111公里）
+                lat_degree_range = 100 / 111.0
+                # 计算经度范围（需要考虑纬度影响）
+                lon_degree_range = 100 / (111.0 * math.cos(math.radians(float(user_latitude))))
+                # 筛选范围内的内容
+                queryset = queryset.filter(
+                    latitude__range=(float(user_latitude) - lat_degree_range,
+                                     float(user_latitude) + lat_degree_range),
+                    longitude__range=(float(user_longitude) - lon_degree_range,
+                                      float(user_longitude) + lon_degree_range)
+                ).exclude(latitude__isnull=True).exclude(longitude__isnull=True)
+
         # 获取时间范围参数
         time_range = self.request.query_params.get('time_range', None)
         if time_range:

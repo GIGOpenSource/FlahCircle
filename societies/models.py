@@ -46,7 +46,8 @@ class Dynamic(models.Model):
     create_time = models.DateTimeField(auto_now_add=True)
     update_time = models.DateTimeField(auto_now=True)
     view_count = models.IntegerField(blank=True, null=True, default=0)
-
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True, verbose_name="纬度")
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True, verbose_name="经度")
     class Meta:
         db_table = 't_social_dynamic'
         ordering = ['-create_time']

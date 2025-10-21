@@ -14,5 +14,15 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-
+        migrations.AddField(
+            model_name='content',
+            name='author',
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL,
+                                    related_name='内容表', to=settings.AUTH_USER_MODEL),
+        ),
+        migrations.AddField(
+            model_name='content',
+            name='tags',
+            field=models.ManyToManyField(blank=True, related_name='contents', to='tags.tag', verbose_name='标签'),
+        ),
     ]
