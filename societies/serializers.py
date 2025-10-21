@@ -23,8 +23,8 @@ class SocialDynamicSerializer(serializers.ModelSerializer):
                 from user.models import UserPurchase
                 return UserPurchase.objects.filter(
                     user_id=request.user.id,
-                    content_type='content',
-                    object_id=obj.prefixed_id
+                    content_type='dynamic',
+                    object_id=obj.id
                 ).exists()
             except:
                 return False
@@ -53,8 +53,8 @@ class SocialDynamicWithFollowSerializer(serializers.ModelSerializer):
             from user.models import UserPurchase
             return UserPurchase.objects.filter(
                 user_id=request.user.id,
-                content_type='content',
-                object_id=obj.prefixed_id
+                content_type='dynamic',
+                object_id=obj.id
             ).exists()
         except Exception:
             return False
