@@ -156,16 +156,15 @@ class ContentCommentViewSet(CommentViewSet):
 
     @action(detail=True, methods=['post'], url_path='purchase')
     @transaction.atomic
-    def perform_video(self, request):
+    def perform_video(self, request, pk=None):
         """
        购买视频访问权限
        参数:
        - video_id: 视频ID
        """
-        content_id = request.data.get('content_id')
         try:
             # 获取视频对象
-            video = Content.objects.get(id=content_id, is_vip=True)  # 假设is_vip字段标识VIP视频
+            video = Content.objects.get(pk=pk, is_vip=True)  # 假设is_vip字段标识VIP视频
         except Content.DoesNotExist:
             return ApiResponse(code=404, message="视频不存在")
         user = request.user
@@ -177,7 +176,7 @@ class ContentCommentViewSet(CommentViewSet):
             userPurchase = UserPurchase.objects.create()
             userPurchase.content_type = "content"
             userPurchase.user = user
-            userPurchase.object_id = content_id
+            userPurchase.object_id = pk
             userPurchase.purchase_time = datetime.now()
             userPurchase.price = video.price
             userPurchase.save()
