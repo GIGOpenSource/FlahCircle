@@ -33,7 +33,7 @@ class ContentSerializer(serializers.ModelSerializer):
             return UserPurchase.objects.filter(
                 user_id=request.user.id,
                 content_type='content',
-                object_id=obj.prefixed_id
+                object_id=obj.id
             ).exists()
         except Exception:
             return False
@@ -103,7 +103,7 @@ class ContentWithFollowSerializer(serializers.ModelSerializer):
             return UserPurchase.objects.filter(
                 user_id=request.user.id,
                 content_type='content',
-                object_id=obj.prefixed_id
+                object_id=obj.id
             ).exists()
         except Exception:
             return False
