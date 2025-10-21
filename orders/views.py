@@ -352,8 +352,6 @@ class OrderViewSet(BaseViewSet):
             payment = order.payment
             # 根据支付渠道类型更新用户对应资产
             if payment.pay_channel == 'vip':
-                order.pay_channel = 'vip'
-
                 # VIP充值，增加会员天数
                 if user.vip_days:
                     # 如果已有vip_days，则在现有基础上增加天数
@@ -363,7 +361,6 @@ class OrderViewSet(BaseViewSet):
                     user.vip_days = timezone.now() + timedelta(days=payment.days_num)
                 user.save(update_fields=['vip_days'])
             elif payment.pay_channel == 'gold':
-                order.pay_channel = 'gold'
                 # 金币充值，增加金币数量
                 if payment.gold_coin and payment.gold_coin > 0:
                     user.gold_coin += payment.gold_coin
