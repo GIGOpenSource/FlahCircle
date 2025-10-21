@@ -25,13 +25,13 @@ from rest_framework import filters
 @extend_schema(tags=["订单管理"])
 @extend_schema_view(
     list=extend_schema(summary='获取订单支付记录列表',
-        parameters=[OpenApiParameter(name='type', description='type字段过滤'),]
-    ),
+                       parameters=[OpenApiParameter(name='type', description='type字段过滤'), ]
+                       ),
     retrieve=extend_schema(summary='获取订单详情'),
-    create=extend_schema(summary='创建订单',),
-    update=extend_schema(summary='更新订单',),
-    partial_update=extend_schema(summary='部分更新订单',),
-    destroy=extend_schema(summary='删除订单',)
+    create=extend_schema(summary='创建订单', ),
+    update=extend_schema(summary='更新订单', ),
+    partial_update=extend_schema(summary='部分更新订单', ),
+    destroy=extend_schema(summary='删除订单', )
 )
 class OrderViewSet(BaseViewSet):
     queryset = Order.objects.all()
@@ -54,6 +54,7 @@ class OrderViewSet(BaseViewSet):
         else:
             ip = request.META.get('REMOTE_ADDR')
         return ip
+
     def get_queryset(self):
         """
         普通用户只能查看自己的订单，管理员可以查看所有订单
@@ -133,6 +134,7 @@ class OrderViewSet(BaseViewSet):
         device_id = request.data.get('device_id', '')  # 设备ID
         payment_id = request.data.get('payment_id')  # 支付配置ID
         pay_method = request.data.get('pay_method')  # 支付方式
+        pay_channel = request.data.get('pay_channel')  # 订单类型 vip gold
         # 验证必要参数
         if not all([payment_id, pay_method]):
             return Response({
@@ -184,6 +186,7 @@ class OrderViewSet(BaseViewSet):
             player_name=user.user_nickname if hasattr(user, 'user_nickname') else user.username,
             player_tel=getattr(user, 'phone', ''),
             pay_account=getattr(user, 'phone', ''),
+            pay_channel=pay_channel,
             notify_url=request.build_absolute_uri('/api/orders/payment-callback/')
         )
         # 生成支付平台订单号
