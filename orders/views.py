@@ -2,6 +2,8 @@ import hashlib
 import json
 import urllib.parse
 import uuid
+from datetime import timedelta
+
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
@@ -346,9 +348,13 @@ class OrderViewSet(BaseViewSet):
             # 根据支付渠道类型更新用户对应资产
             if payment.pay_channel == 'vip':
                 # VIP充值，增加会员天数
-                if payment.days_num and payment.days_num > 0:
-                    user.vip_days += payment.days_num
-                    user.save(update_fields=['vip_days'])
+                if user.vip_days:
+                    # 如果已有vip_days，则在现有基础上增加天数
+                    user.vip_days += timedelta(days=payment.days_num)
+                else:
+                    # 如果没有vip_days，则从现在开始计算
+                    user.vip_days = timezone.now() + timedelta(days=payment.days_num)
+                user.save(update_fields=['vip_days'])
             elif payment.pay_channel == 'gold':
                 # 金币充值，增加金币数量
                 if payment.gold_coin and payment.gold_coin > 0:
