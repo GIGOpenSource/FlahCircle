@@ -25,7 +25,9 @@ from rest_framework import filters
 @extend_schema(tags=["订单管理"])
 @extend_schema_view(
     list=extend_schema(summary='获取订单支付记录列表',
-                       parameters=[OpenApiParameter(name='type', description='type字段过滤'), ]
+                       parameters=[OpenApiParameter(name='type', description='type字段过滤'),
+                       OpenApiParameter(name='pay_channel', description='支付明细vip gold')]
+
                        ),
     retrieve=extend_schema(summary='获取订单详情'),
     create=extend_schema(summary='创建订单', ),
@@ -345,17 +347,14 @@ class OrderViewSet(BaseViewSet):
             order.pay_status = 'success'
             order.pay_time = timezone.now()
             order.notify_status = 'success'  # 标记回调状态
-            order.save(update_fields=[
-                'pay_status', 'pay_time', 'notify_status'
-            ])
-
             # 获取订单对应的用户
             user = order.user
             # 获取支付配置信息
             payment = order.payment
-
             # 根据支付渠道类型更新用户对应资产
             if payment.pay_channel == 'vip':
+                order.pay_channel = 'vip'
+
                 # VIP充值，增加会员天数
                 if user.vip_days:
                     # 如果已有vip_days，则在现有基础上增加天数
@@ -365,11 +364,14 @@ class OrderViewSet(BaseViewSet):
                     user.vip_days = timezone.now() + timedelta(days=payment.days_num)
                 user.save(update_fields=['vip_days'])
             elif payment.pay_channel == 'gold':
+                order.pay_channel = 'gold'
                 # 金币充值，增加金币数量
                 if payment.gold_coin and payment.gold_coin > 0:
                     user.gold_coin += payment.gold_coin
                     user.save(update_fields=['gold_coin'])
-
+            order.save(update_fields=[
+                'pay_status', 'pay_time', 'notify_status','pay_channel'
+            ])
         # 准备返回的订单数据
         order_data = {
             'trade_no': order.trade_no,
