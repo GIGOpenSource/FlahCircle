@@ -6,8 +6,11 @@ from drf_spectacular.utils import extend_schema_view, extend_schema, OpenApiPara
 
 from chat.models import Message, Session, Settings
 from chat.serializers import MessageSerializer, SessionSerializer, SettingsSerializer
+from goods.models import Good
 from middleware.base_views import BaseViewSet
 from middleware.utils import ApiResponse, CustomPagination
+from user.models import User
+
 
 @extend_schema(tags=["聊天室功能"])
 @extend_schema_view(
@@ -104,7 +107,14 @@ class MessageViewSet(BaseViewSet):
         session_exists = Session.objects.filter(session_id=receiver_id).exists()
         if not session_exists:
             return ApiResponse(code=400, message="房间不存在或已解散")
+        gold_service = User.objects.get(id=sender_id)
 
+        chat_price = Good.objects.get(name="chat_text").price
+        if gold_service.gold_coin < chat_price:
+            return ApiResponse(code=400, message="金币不足")
+        else:
+            gold_service.gold_coin=gold_service.gold_coin - chat_price
+            gold_service.save()
         # 创建消息
         message = Message.objects.create(
             sender_id=sender_id,
