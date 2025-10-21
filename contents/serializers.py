@@ -18,6 +18,7 @@ class ContentSerializer(serializers.ModelSerializer):
         many=True,
         required=False
     )
+
     is_purchase = serializers.SerializerMethodField()
 
     def get_is_purchase(self, obj):

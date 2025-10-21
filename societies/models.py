@@ -3,6 +3,7 @@ import uuid
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
 
+import categories
 from user.models import User
 
 
@@ -45,6 +46,7 @@ class Dynamic(models.Model):
     view_count = models.IntegerField(blank=True, null=True, default=0)
     latitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True, verbose_name="纬度")
     longitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True, verbose_name="经度")
+    categories = models.ManyToManyField('categories.Category', related_name='dynamics', blank=True, verbose_name="标签")
     class Meta:
         db_table = 't_social_dynamic'
         ordering = ['-create_time']

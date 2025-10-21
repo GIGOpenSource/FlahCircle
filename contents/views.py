@@ -1,24 +1,28 @@
 import math
 
 from django_filters.rest_framework import DjangoFilterBackend
+from pycparser.c_ast import Return
 from rest_framework import viewsets, filters
 from rest_framework.decorators import action
 from django.utils import timezone
 from django.db.models import Q
 from datetime import timedelta
-
+# from contents.models import
+from categories.models import Category
 from contents.models import Content
 from contents.serializers import ContentSerializer, ContentWithFollowSerializer
 from middleware.base_views import BaseViewSet
 from drf_spectacular.utils import extend_schema_view, extend_schema, OpenApiParameter
 
 from middleware.utils import ApiResponse, CustomPagination
+from tags.models import Tag
 
 
 @extend_schema_view(
     list=extend_schema(summary='获取内容列表 搜索筛选 点赞收藏关注',tags=['内容'],
         parameters=[
-            OpenApiParameter(name='type', description='type字段过滤'),
+            OpenApiParameter(name='type', description='type字段过滤，short 短视频，long长视频'),
+            OpenApiParameter(name='categories', description='导航的子标签'),
             OpenApiParameter(name='is_vip', description='是否vip视频 true、false'),
             OpenApiParameter(name='time_range', description='时间范围: month(本月), half_year(半年), longer(更久)', required=False),
             OpenApiParameter(name='paid_only', description='仅显示付费内容: true(仅付费), false或不传(全部)',
@@ -27,6 +31,7 @@ from middleware.utils import ApiResponse, CustomPagination
                              required=False),
             OpenApiParameter(name='ordering',description='首页：-like_count(最热), -create_time(最新)'
                                                          '||发现: -like_count(精选), -create_time(发现)')
+
         ],
        description='排序字段，例如: -create_time(最新上架),，-favorite_count（收藏量）,-like_count(热门影视)',
        ),
@@ -62,6 +67,16 @@ class ContentViewSet(BaseViewSet):
         if paid_only and paid_only.lower() == 'true':
             # 筛选price > 0的内容
             queryset = queryset.filter(price__gt=0)
+
+        categories = self.request.query_params.get('categories', None)
+        if categories:
+            try:
+                from categories.models import Category
+                categ_title = Category.objects.get(id=categories).title
+                tags = Tag.objects.filter(name__contains=categ_title).values_list('id', flat=True)
+                queryset = queryset.filter(tags__id__in=tags).distinct()
+            except Exception as e:
+                return queryset.none()
 
         same_city = self.request.query_params.get('same_city', None)
         if same_city and same_city.lower() == 'true' and self.request.user.is_authenticated:
@@ -163,12 +178,12 @@ class ContentViewSet(BaseViewSet):
         # 获取分页器实例
         page = self.paginate_queryset(queryset)
         if page is not None:
-            serializer = ContentWithFollowSerializer(page, many=True, context=context_data)
+            serializer = ContentSerializer(page, many=True, context=context_data)
             # 使用自定义分页响应
             return self.get_paginated_response(serializer.data)
 
         # 如果没有分页，返回普通响应
-        serializer = ContentWithFollowSerializer(queryset, many=True, context=context_data)
+        serializer = ContentSerializer(queryset, many=True, context=context_data)
         return ApiResponse(serializer.data)
 
     def retrieve(self, request, *args, **kwargs):

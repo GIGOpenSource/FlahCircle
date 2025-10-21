@@ -3,13 +3,14 @@ from categories.models import Category
 from categories.serializers import CategorySerializer
 from middleware.base_views import BaseViewSet
 from drf_spectacular.utils import extend_schema_view, extend_schema, OpenApiParameter
-
 from middleware.utils import ApiResponse, CustomPagination
-
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters
 
 @extend_schema_view(
     list=extend_schema(summary='获取标签分类',tags=['标签分类'],
-        parameters=[OpenApiParameter(name='type', description='type字段过滤'),]
+        parameters=[OpenApiParameter(name='type', description='type字段过滤'),
+                    OpenApiParameter(name='ordering',description='排序字段，例如: -sort, sort(标签排序)'),]
     ),
     retrieve=extend_schema(summary='获取标签分类详情',tags=['标签分类']),
     create=extend_schema(summary='创建标签分类',tags=['标签分类']),
@@ -21,6 +22,9 @@ class CategoryViewSet(BaseViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     pagination_class = CustomPagination
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    ordering_fields = ['sort']
+    ordering = ['-sort']
     def list(self, request, *args, **kwargs):
         # 获取过滤后的查询集
         queryset = self.filter_queryset(self.get_queryset())
