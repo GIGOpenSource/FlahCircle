@@ -11,7 +11,25 @@ class UserSerializer(serializers.ModelSerializer):
 
 class SocialDynamicSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
+    is_purchase = serializers.SerializerMethodField()
 
+    def get_is_purchase(self, obj):
+        """
+        获取当前用户是否购买了该内容
+        """
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            return False
+
+        try:
+            from user.models import UserPurchase
+            return UserPurchase.objects.filter(
+                user_id=request.user.id,
+                content_type='content',
+                object_id=obj.prefixed_id
+            ).exists()
+        except Exception:
+            return False
     class Meta:
         model = Dynamic
         fields = '__all__'
@@ -23,11 +41,27 @@ class SocialDynamicWithFollowSerializer(serializers.ModelSerializer):
     is_follower = serializers.SerializerMethodField()
     is_liked = serializers.SerializerMethodField()
     is_favourites = serializers.SerializerMethodField()
+    is_purchase = serializers.SerializerMethodField()
 
+    def get_is_purchase(self, obj):
+        """
+        获取当前用户是否购买了该内容
+        """
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            return False
+        try:
+            from user.models import UserPurchase
+            return UserPurchase.objects.filter(
+                user_id=request.user.id,
+                content_type='content',
+                object_id=obj.prefixed_id
+            ).exists()
+        except Exception:
+            return False
     class Meta:
         model = Dynamic
         fields = '__all__'
-
     def get_is_follower(self, obj):
         """
         获取当前用户是否关注了该动态的作者
@@ -38,7 +72,6 @@ class SocialDynamicWithFollowSerializer(serializers.ModelSerializer):
             followed_user_ids = self.context.get('followed_user_ids', [])
             return obj.user.id in followed_user_ids
         return False
-
     def get_is_liked(self, obj):
         """
         获取当前用户是否点赞了该动态
@@ -48,7 +81,6 @@ class SocialDynamicWithFollowSerializer(serializers.ModelSerializer):
             liked_dynamic_ids = self.context.get('liked_dynamic_ids', [])
             return obj.id in liked_dynamic_ids
         return False
-
     def get_is_favourites(self, obj):
         """
         获取当前用户是否收藏了该动态

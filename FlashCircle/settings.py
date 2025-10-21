@@ -179,7 +179,8 @@ AUTH_PASSWORD_VALIDATORS = [
 # LANGUAGE_CODE = 'en-us'
 LANGUAGE_CODE = 'zh-hans'
 
-TIME_ZONE = 'UTC'
+# 将UTC改为中国时区
+TIME_ZONE = 'Asia/Shanghai'
 
 USE_I18N = True
 
