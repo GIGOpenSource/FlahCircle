@@ -134,7 +134,6 @@ class OrderViewSet(BaseViewSet):
         device_id = request.data.get('device_id', '')  # 设备ID
         payment_id = request.data.get('payment_id')  # 支付配置ID
         pay_method = request.data.get('pay_method')  # 支付方式
-        pay_channel = request.data.get('pay_channel')  # 订单类型 vip gold
         # 验证必要参数
         if not all([payment_id, pay_method]):
             return Response({
@@ -186,7 +185,7 @@ class OrderViewSet(BaseViewSet):
             player_name=user.user_nickname if hasattr(user, 'user_nickname') else user.username,
             player_tel=getattr(user, 'phone', ''),
             pay_account=getattr(user, 'phone', ''),
-            pay_channel=pay_channel,
+            pay_channel=payment_config.pay_channel,
             notify_url=request.build_absolute_uri('/api/orders/payment-callback/')
         )
         # 生成支付平台订单号
