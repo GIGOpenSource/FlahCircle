@@ -9,7 +9,7 @@ from rest_framework import filters
 
 @extend_schema_view(
     list=extend_schema(summary='获取标签分类',tags=['标签分类'],
-        parameters=[OpenApiParameter(name='type', description='type字段过滤'),
+        parameters=[OpenApiParameter(name='categories_type', description='标签分类，content_found、content_sift'),
                     OpenApiParameter(name='ordering',description='排序字段，例如: -sort, sort(标签排序)'),]
     ),
     retrieve=extend_schema(summary='获取标签分类详情',tags=['标签分类']),
@@ -23,8 +23,10 @@ class CategoryViewSet(BaseViewSet):
     serializer_class = CategorySerializer
     pagination_class = CustomPagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['categories_type']
     ordering_fields = ['sort']
     ordering = ['-sort']
+
     def list(self, request, *args, **kwargs):
         # 获取过滤后的查询集
         queryset = self.filter_queryset(self.get_queryset())
