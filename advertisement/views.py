@@ -9,7 +9,8 @@ from rest_framework import filters
 from middleware.utils import CustomPagination
 from middleware.utils import ApiResponse
 from user.models import UserPurchase
-
+from rest_framework.decorators import action
+from django.db import transaction
 
 @extend_schema(tags=["广告管理"])
 @extend_schema_view(
@@ -27,7 +28,7 @@ class AdvertisementViewSet(BaseViewSet):
     serializer_class = AdvertisementSerializer
     pagination_class = CustomPagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['type', 'is_active']
+    filterset_fields = ['type', 'is_active','name',]
     search_fields = ['name', 'title', 'description']
     ordering_fields = ['create_time', 'update_time', 'sort_order']
     ordering = ['-create_time']
@@ -37,6 +38,12 @@ class AdvertisementViewSet(BaseViewSet):
         queryset = self.filter_queryset(self.get_queryset())
         # 获取分页器实例
         page = self.paginate_queryset(queryset)
+        name = self.request.query_params.get("name")
+        ads_type = self.request.query_params.get("type")
+        if name:
+            queryset = queryset.filter(name__contains=name)
+        if ads_type:
+            queryset = queryset.filter(type=ads_type)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
             # 使用自定义分页响应
@@ -45,8 +52,7 @@ class AdvertisementViewSet(BaseViewSet):
         serializer = self.get_serializer(queryset, many=True)
         return ApiResponse(serializer.data)
 
-    from rest_framework.decorators import action
-    from django.db import transaction
+
 
     @extend_schema(summary='购买广告', tags=['购买管理'])
     @action(detail=True, methods=['post'], url_path='adv_purchase')
@@ -59,8 +65,8 @@ class AdvertisementViewSet(BaseViewSet):
        """
         try:
             # 获取视频对象
-            advertise = Advertisement.objects.get(pk=pk)
-        except advertise.DoesNotExist:
+            advertise = Advertisement.objects.get(pk=pk)  # 假设is_vip字段标识VIP视频
+        except Advertisement.DoesNotExist:
             return ApiResponse(code=404, message="广告不存在")
         user = request.user
         if user.gold_coin < advertise.price:
