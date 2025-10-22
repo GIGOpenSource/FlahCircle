@@ -106,6 +106,7 @@ class UserSerializer(serializers.ModelSerializer):
         instance.member_level = validated_data.get('member_level', instance.member_level)
         instance.user_bio = validated_data.get('user_bio', instance.user_bio)
         instance.status = validated_data.get('status', instance.status)
+        instance.gold_coin = validated_data.get('gold_coin', instance.gold_coin)
         instance.save()
         # 处理标签更新
         if 'tags' in validated_data:
