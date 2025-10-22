@@ -48,6 +48,7 @@ class AdvertisementViewSet(BaseViewSet):
     from rest_framework.decorators import action
     from django.db import transaction
 
+    @extend_schema(summary='购买广告', tags=['购买管理'])
     @action(detail=True, methods=['post'], url_path='adv_purchase')
     @transaction.atomic
     def perform_video(self, request, pk=None):
