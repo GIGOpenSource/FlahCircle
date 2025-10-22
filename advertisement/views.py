@@ -59,7 +59,7 @@ class AdvertisementViewSet(BaseViewSet):
        """
         try:
             # 获取视频对象
-            advertise = Advertisement.objects.get(pk=pk, is_vip=True)  # 假设is_vip字段标识VIP视频
+            advertise = Advertisement.objects.get(pk=pk)
         except advertise.DoesNotExist:
             return ApiResponse(code=404, message="广告不存在")
         user = request.user

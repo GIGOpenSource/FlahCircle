@@ -164,7 +164,7 @@ class ContentCommentViewSet(CommentViewSet):
        """
         try:
             # 获取视频对象
-            video = Content.objects.get(pk=pk, is_vip=True)  # 假设is_vip字段标识VIP视频
+            video = Content.objects.get(pk=pk)
         except Content.DoesNotExist:
             return ApiResponse(code=404, message="视频不存在")
         user = request.user
@@ -270,7 +270,7 @@ class DynamicCommentViewSet(CommentViewSet):
        """
         try:
             # 获取视频对象
-            video = Dynamic.objects.get(pk=pk, is_vip=True)  # 假设is_vip字段标识VIP视频
+            video = Dynamic.objects.get(pk=pk)
         except Dynamic.DoesNotExist:
             return ApiResponse(code=404, message="动态不存在")
         user = request.user

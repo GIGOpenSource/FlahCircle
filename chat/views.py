@@ -10,13 +10,13 @@ from goods.models import Good
 from middleware.base_views import BaseViewSet
 from middleware.utils import ApiResponse, CustomPagination
 from user.models import User
-
+from django.db.models import Q
 
 @extend_schema(tags=["聊天室功能"])
 @extend_schema_view(
     list=extend_schema(summary='获取消息列表 通过receiver_id 聊天室id返回所有对话',
            parameters=[
-               OpenApiParameter(name='receiver_id', description='接收者ID过滤', required=False, type=int),
+               OpenApiParameter(name='receiver_id', description='接收者ID过滤', required=True, type=int),
                OpenApiParameter(name='sender_id', description='发送者ID过滤', required=False, type=int),
                OpenApiParameter(name='type', description='消息类型过滤', required=False, type=str),
                OpenApiParameter(name='sender_nickname', description='发送者姓名', required=False, type=str),
@@ -47,6 +47,13 @@ class MessageViewSet(BaseViewSet):
 
         # 获取sender_nickname参数
         sender_nickname = self.request.query_params.get('sender_nickname', None)
+        receiver_id = self.request.query_params.get('receiver_id')
+        if not receiver_id:
+            # 返回空查询集，因为receiver_id是必传参数
+            return queryset.none()
+
+        # 根据receiver_id过滤
+        queryset = queryset.filter(receiver_id=receiver_id)
 
         # 如果传入了sender_nickname参数，则进行过滤
         if sender_nickname:
@@ -145,6 +152,21 @@ class SessionViewSet(BaseViewSet):
     serializer_class = SessionSerializer
     pagination_class = CustomPagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+
+    def get_queryset(self):
+        """
+        重写查询集方法，筛选出user_id或other_user_id等于当前用户ID的会话
+        """
+        queryset = super().get_queryset()
+        # 获取当前登录用户ID（假设从请求中获取，具体方式根据你的认证逻辑调整）
+        user_id = self.request.user.id  # 这里假设使用Django默认的user认证
+
+        # 如果用户已登录，筛选符合条件的会话
+        if user_id:
+            queryset = queryset.filter(
+                Q(user_id=user_id) | Q(other_user_id=user_id)
+            )
+        return queryset
 
     def list(self, request, *args, **kwargs):
         # 获取过滤后的查询集

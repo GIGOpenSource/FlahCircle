@@ -17,7 +17,10 @@ from rest_framework import filters
         tags=['任务奖励管理'],
         parameters=[
             OpenApiParameter(name='status', description='任务奖励状态过滤: pending(待领取), claimed(已领取), completed(已完成)', required=False),
-            OpenApiParameter(name='type', description='任务奖励类型过滤: daily(每日任务), checkin(签到任务), novice(新手任务)', required=False)
+            OpenApiParameter(name='type', description='任务奖励类型过滤: daily(每日任务), checkin(签到任务), novice(新手任务)', required=False),
+            OpenApiParameter(name='task_template__name', description='task_template__name', required=False),
+            OpenApiParameter(name='status', description='status', required=False),
+            OpenApiParameter(name='user__user_nickname', description='user__user_nickname', required=False),
         ]
     ),
     retrieve=extend_schema(summary='获取任务奖励详情', tags=['任务奖励管理']),
@@ -29,6 +32,9 @@ from rest_framework import filters
 class RewardViewSet(BaseViewSet):
     queryset = Reward.objects.all()
     serializer_class = TaskRewardSerializer
+    pagination_class = CustomPagination
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
+    filterset_fields = {'user__user_nickname': ['icontains'], 'status': ['exact'],'task_template__name': ['icontains']}
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -43,7 +49,18 @@ class RewardViewSet(BaseViewSet):
         else:
             # 未认证用户不返回任何任务奖励
             return queryset.none()
-
+    def list(self, request, *args, **kwargs):
+        # 获取过滤后的查询集
+        queryset = self.filter_queryset(self.get_queryset())
+        # 获取分页器实例
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            # 使用自定义分页响应
+            return self.get_paginated_response(serializer.data)
+        # 如果没有分页，返回普通响应
+        serializer = self.get_serializer(queryset, many=True)
+        return ApiResponse(code=200, data=serializer.data, message="任务奖励列表获取成功")
     @extend_schema(
         summary='领取任务奖励',
         tags=['任务奖励管理'],

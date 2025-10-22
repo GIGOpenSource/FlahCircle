@@ -12,6 +12,7 @@ class TaskTemplateSerializer(serializers.ModelSerializer):
 class TaskRewardSerializer(serializers.ModelSerializer):
     task_template_id = serializers.IntegerField(source='task_template.id', read_only=True)
     user_id = serializers.IntegerField(source='user.id', read_only=True)
+    user_name = serializers.CharField(source='user.user_nickname', read_only=True)
     task_template_name = serializers.CharField(source='task_template.name', read_only=True)
     task_template_description = serializers.CharField(source='task_template.description', read_only=True)
     task_template_type = serializers.CharField(source='task_template.type', read_only=True)
