@@ -30,7 +30,7 @@ class TagViewSet(BaseViewSet):
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['name']
     ordering = ['-usage_count']
-    filterset_fields = ['name', 'status']
+    filterset_fields = ['name', 'status','type']
 
     @extend_schema(
         summary='推荐博主',

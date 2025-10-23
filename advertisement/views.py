@@ -1,7 +1,7 @@
 from datetime import datetime
 
-from advertisement.models import Advertisement
-from advertisement.serializers import AdvertisementSerializer
+from advertisement.models import Advertisement, Carousel
+from advertisement.serializers import AdvertisementSerializer, CarouselSerializer
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
 from middleware.base_views import BaseViewSet
 from django_filters.rest_framework import DjangoFilterBackend
@@ -15,7 +15,10 @@ from django.db import transaction
 @extend_schema(tags=["广告管理"])
 @extend_schema_view(
     list=extend_schema(summary='获取广告列表',
-        parameters=[OpenApiParameter(name='type', description='广告类型过滤'),]
+        parameters=[
+            OpenApiParameter(name='type', description='广告类型过滤'),
+            OpenApiParameter(name='banner_game_url', description='广告类型过滤'),
+        ]
     ),
     retrieve=extend_schema(summary='获取广告详情'),
     create=extend_schema(summary='创建广告'),
@@ -85,3 +88,13 @@ class AdvertisementViewSet(BaseViewSet):
             print(repr(e))
             return ApiResponse(code=500, message="购买失败")
         return ApiResponse(message="购买成功", data={'remaining_coins': user.gold_coin})
+
+class CarouselViewSet(BaseViewSet):
+    queryset = Carousel.objects.all()
+    serializer_class = CarouselSerializer
+    pagination_class = CustomPagination
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['advertisement', 'type']
+    search_fields = ['name']
+    ordering_fields = ['create_time', 'sort_order']
+    ordering = ['sort_order']
