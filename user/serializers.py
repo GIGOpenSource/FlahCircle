@@ -7,6 +7,7 @@ from chat.models import Session
 from follows.models import Follow
 from societies.models import Dynamic
 from tags.models import Tag
+from .models import UserPurchase
 
 User = get_user_model()
 
@@ -181,3 +182,9 @@ class UserLoginSerializer(serializers.Serializer):
             raise serializers.ValidationError("密码不能为空")
 
         return data
+
+class UserPurchaseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserPurchase
+        fields = '__all__'
+        read_only_fields = ['user', 'purchase_time']

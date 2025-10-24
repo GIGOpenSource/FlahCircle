@@ -141,6 +141,7 @@ class UserPurchase(models.Model):
     PURCHASE_TYPES = (
         ('content', '内容'),
         ('dynamic', '动态'),
+        ("advertise","广告")
     )
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='purchases')
     # 使用 GenericForeignKey 支持关联不同类型的对象

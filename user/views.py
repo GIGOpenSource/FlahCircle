@@ -3,10 +3,7 @@ from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiPara
 from rest_framework import status, generics, permissions, viewsets
 from rest_framework.authtoken.views import ObtainAuthToken
 from django.contrib.auth import get_user_model
-from rest_framework.authentication import TokenAuthentication
-from rest_framework.exceptions import AuthenticationFailed
 from django.utils import timezone
-from datetime import timedelta
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
 from middleware.base_views import BaseViewSet
@@ -14,8 +11,11 @@ from middleware.permissions import IsAdminRole, IsCreator, IsAdminOrCreator
 from .serializers import UserRegisterSerializer, UserLoginSerializer, UserSerializer, GroupSerializer
 from rest_framework.authtoken.models import Token
 from middleware.utils import ApiResponse, CustomPagination
-
+from rest_framework.decorators import action
+from .models import UserPurchase
+from .serializers import UserPurchaseSerializer
 User = get_user_model()
+
 
 # @extend_schema(tags=["用户管理"])
 @extend_schema(
@@ -47,6 +47,7 @@ class RegisterView(generics.CreateAPIView):
 @extend_schema(tags=["用户管理"])
 class CustomLoginView(ObtainAuthToken):
     permission_classes = [permissions.AllowAny]
+
     @extend_schema(
         operation_id="user-login",
         summary="用户登录/注册",
@@ -75,7 +76,7 @@ class CustomLoginView(ObtainAuthToken):
                         'user_nickname': user.user_nickname,
                         'token': token.key,
                         'member_level': user.member_level,
-                        'is_staff':user.is_staff,
+                        'is_staff': user.is_staff,
                         'expires_in': 14400  # 4小时，单位秒
                     }, message='登录成功')
                 else:
@@ -100,9 +101,10 @@ class CustomLoginView(ObtainAuthToken):
                 }, code=201, message='注册并登录成功')
         return ApiResponse(code=400, message=serializer.errors)
 
+
 @extend_schema(tags=["用户管理"])
 @extend_schema_view(
-    list=extend_schema(summary="获取用户列表",parameters=[
+    list=extend_schema(summary="获取用户列表", parameters=[
         OpenApiParameter(name='status', description='账号状态'),
         OpenApiParameter(name='member_level', description='账号状态'),
         OpenApiParameter(name='phone', description='电话号'),
@@ -110,22 +112,25 @@ class CustomLoginView(ObtainAuthToken):
         OpenApiParameter(name='user_nickname', description='用户名'),
         OpenApiParameter(name='search', description='模糊搜索字段：id 用户ID、昵称 user_nickname、手机号phone'),
 
-    ], responses={200: UserSerializer(many=True),                                                         }
-    ),
-    retrieve=extend_schema(summary="获取用户详情,返回是否关注，房间session",responses={200: UserSerializer, 404: "用户不存在"}
-    ),
+    ], responses={200: UserSerializer(many=True), }
+                       ),
+    retrieve=extend_schema(summary="获取用户详情,返回是否关注，房间session",
+                           responses={200: UserSerializer, 404: "用户不存在"}
+                           ),
     update=extend_schema(
-        summary="更新用户",description="通过id除username都可变",request=UserSerializer),
-    partial_update=extend_schema(summary="部分更新用户",request=UserSerializer),
-    destroy=extend_schema(summary="删除用户",description="删除指定用户，仅管理员可操作",responses={204: "删除成功", 404: "用户不存在"}
-    )
+        summary="更新用户", description="通过id除username都可变", request=UserSerializer),
+    partial_update=extend_schema(summary="部分更新用户", request=UserSerializer),
+    destroy=extend_schema(summary="删除用户", description="删除指定用户，仅管理员可操作",
+                          responses={204: "删除成功", 404: "用户不存在"}
+                          )
 )
 class UserViewSet(BaseViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     pagination_class = CustomPagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['id','status', 'member_level','phone','id','user_nickname',]
+    filterset_fields = ['id', 'status', 'member_level', 'phone', 'id', 'user_nickname', ]
+
     # search_fields = ['id','user_nickname', 'phone']
     def get_permissions(self):
         """
@@ -156,13 +161,15 @@ class UserViewSet(BaseViewSet):
 # 新增用户组管理视图集
 @extend_schema(tags=["用户组管理"])
 @extend_schema_view(
-    list=extend_schema(summary="获取用户组列表",description="返回所有用户组，仅管理员可访问",responses={200: GroupSerializer(many=True)}),
-    create=extend_schema(summary="创建用户组",request=GroupSerializer,responses={201: GroupSerializer}),
-    retrieve=extend_schema(summary="获取用户组详情",responses={200: GroupSerializer, 404: "用户组不存在"}),
-    update=extend_schema(summary="全量更新用户组",request=GroupSerializer),
-    partial_update=extend_schema(summary="部分更新用户组",request=GroupSerializer),
-    destroy=extend_schema(summary="删除用户组",description="删除指定用户组，仅管理员可操作",responses={204: "删除成功", 404: "用户组不存在"}
-    )
+    list=extend_schema(summary="获取用户组列表", description="返回所有用户组，仅管理员可访问",
+                       responses={200: GroupSerializer(many=True)}),
+    create=extend_schema(summary="创建用户组", request=GroupSerializer, responses={201: GroupSerializer}),
+    retrieve=extend_schema(summary="获取用户组详情", responses={200: GroupSerializer, 404: "用户组不存在"}),
+    update=extend_schema(summary="全量更新用户组", request=GroupSerializer),
+    partial_update=extend_schema(summary="部分更新用户组", request=GroupSerializer),
+    destroy=extend_schema(summary="删除用户组", description="删除指定用户组，仅管理员可操作",
+                          responses={204: "删除成功", 404: "用户组不存在"}
+                          )
 )
 class GroupViewSet(BaseViewSet):
     queryset = Group.objects.all()
@@ -170,3 +177,27 @@ class GroupViewSet(BaseViewSet):
     permission_classes = [permissions.IsAdminUser]  # 仅管理员可操作用户组
 
 
+@extend_schema(tags=["用户消费记录"])
+class UserPurchaseViewSet(viewsets.ModelViewSet):
+    serializer_class = UserPurchaseSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    pagination_class = CustomPagination
+
+    def get_queryset(self):
+        # 用户只能查看自己的消费记录
+        return UserPurchase.objects.filter(user=self.request.user).select_related('user')
+
+    @extend_schema(
+        summary="获取当前用户的消费记录",
+        description="返回当前用户的所有消费记录"
+    )
+    @action(detail=False, methods=['get'], url_path='my-purchases')
+    def my_purchases(self, request):
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return ApiResponse(serializer.data)
