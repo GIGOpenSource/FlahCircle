@@ -14,6 +14,7 @@ from middleware.utils import ApiResponse, CustomPagination
 from rest_framework.decorators import action
 from .models import UserPurchase
 from .serializers import UserPurchaseSerializer
+
 User = get_user_model()
 
 
@@ -177,15 +178,29 @@ class GroupViewSet(BaseViewSet):
     permission_classes = [permissions.IsAdminUser]  # 仅管理员可操作用户组
 
 
-@extend_schema(tags=["用户消费记录"])
 class UserPurchaseViewSet(viewsets.ModelViewSet):
     serializer_class = UserPurchaseSerializer
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = CustomPagination
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = ['user', 'content_type']
+    ordering_fields = ['purchase_time']
+    ordering = ['-purchase_time']
 
     def get_queryset(self):
-        # 用户只能查看自己的消费记录
-        return UserPurchase.objects.filter(user=self.request.user).select_related('user')
+        # 管理员可以查看所有消费记录，普通用户只能查看自己的
+        user = self.request.user
+        if user.is_staff or user.is_superuser or user.is_admin_role():
+            return UserPurchase.objects.all().select_related('user')
+        return UserPurchase.objects.filter(user=user).select_related('user')
+
+    def get_permissions(self):
+        # list操作允许管理员查看所有记录，其他操作仍需认证
+        if self.action == 'list':
+            permission_classes = [permissions.IsAuthenticated]
+        else:
+            permission_classes = [permissions.IsAuthenticated]
+        return [permission() for permission in permission_classes]
 
     @extend_schema(
         summary="获取当前用户的消费记录",
@@ -193,7 +208,7 @@ class UserPurchaseViewSet(viewsets.ModelViewSet):
     )
     @action(detail=False, methods=['get'], url_path='my-purchases')
     def my_purchases(self, request):
-        queryset = self.filter_queryset(self.get_queryset())
+        queryset = self.filter_queryset(self.get_queryset().filter(user=request.user))
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
@@ -201,3 +216,73 @@ class UserPurchaseViewSet(viewsets.ModelViewSet):
 
         serializer = self.get_serializer(queryset, many=True)
         return ApiResponse(serializer.data)
+
+    @extend_schema(
+        summary="按类型获取消费记录",
+        description="管理员可查看所有用户的消费记录，普通用户只能查看自己的",
+        parameters=[
+            OpenApiParameter(name='content_type', description='消费记录类型', required=False),
+            OpenApiParameter(name='user', description='用户ID，仅管理员可用', required=False),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @extend_schema(
+        summary="获取消费记录详情",
+        description="根据消费记录类型，返回对应的详细信息"
+    )
+    @action(detail=True, methods=['get'], url_path='detail-info')
+    def detail_info(self, request, pk=None):
+        try:
+            purchase = self.get_object()
+            content_type = purchase.content_type
+            object_id = purchase.object_id
+
+            # 根据不同类型获取对应的对象
+            if content_type == 'content':
+                # 查询 contents app 下的模型
+                from contents.models import Content
+                try:
+                    content_obj = Content.objects.get(id=object_id)
+                    from contents.serializers import ContentSerializer
+                    serializer = ContentSerializer(content_obj)
+                    return ApiResponse({
+                        'purchase_info': UserPurchaseSerializer(purchase).data,
+                        'content_detail': serializer.data
+                    })
+                except Content.DoesNotExist:
+                    return ApiResponse(code=404, message="内容不存在")
+
+            elif content_type == 'dynamic':
+                # 查询 societies app 下的模型
+                from societies.models import Dynamic
+                try:
+                    dynamic_obj = Dynamic.objects.get(id=object_id)
+                    from societies.serializers import DynamicSerializer
+                    serializer = DynamicSerializer(dynamic_obj)
+                    return ApiResponse({
+                        'purchase_info': UserPurchaseSerializer(purchase).data,
+                        'dynamic_detail': serializer.data
+                    })
+                except Dynamic.DoesNotExist:
+                    return ApiResponse(code=404, message="动态不存在")
+
+            elif content_type == 'advertise':
+                # 查询 advertisement app 下的模型
+                from advertisement.models import Advertisement
+                try:
+                    ad_obj = Advertisement.objects.get(id=object_id)
+                    from advertisement.serializers import AdvertisementSerializer
+                    serializer = AdvertisementSerializer(ad_obj)
+                    return ApiResponse({
+                        'purchase_info': UserPurchaseSerializer(purchase).data,
+                        'advertisement_detail': serializer.data
+                    })
+                except Advertisement.DoesNotExist:
+                    return ApiResponse(code=404, message="广告不存在")
+            else:
+                return ApiResponse(code=400, message="不支持的内容类型")
+
+        except UserPurchase.DoesNotExist:
+            return ApiResponse(code=404, message="消费记录不存在")
