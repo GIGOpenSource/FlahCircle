@@ -30,6 +30,8 @@ from user.models import User
                              required=False),
             OpenApiParameter(name='same_city', description='同城筛选: true(仅同城), false或不传(全部)',
                              required=False),
+            OpenApiParameter(name='category_tag', description='t_category id .name == tag.name',
+                             required=False),
             OpenApiParameter(name='ordering',description='首页：-like_count(最热), -create_time(最新)'
                                                          '||发现: -like_count(精选), -create_time(发现)')
 
@@ -68,7 +70,15 @@ class ContentViewSet(BaseViewSet):
         if paid_only and paid_only.lower() == 'true':
             # 筛选price > 0的内容
             queryset = queryset.filter(price__gt=0)
-
+        from categories.models import Category
+        category_tag = self.request.query_params.get('category_tag', None)
+        if category_tag:
+            try:
+                category_name = Category.objects.get(id=category_tag).name
+                tags = Tag.objects.filter(name__contains=category_name).values_list('id', flat=True)
+                queryset = queryset.filter(tags__id=tags).distinct()
+            except Exception as e:
+                return queryset.none()
         categories = self.request.query_params.get('categories', None)
         if categories:
             try:
@@ -276,7 +286,7 @@ class FollowedContentViewSet(BaseViewSet):
     serializer_class = ContentWithFollowSerializer
     pagination_class = CustomPagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['type', 'tabs', 'is_vip']
+    filterset_fields = ['type', 'tabs', 'is_vip','tags']
     search_fields = ['title', 'description']
     ordering_fields = ['create_time', 'update_time', 'favorite_count', 'like_count']
     ordering = ['-create_time']
@@ -294,24 +304,23 @@ class FollowedContentViewSet(BaseViewSet):
             follower_id=current_user.id,
             status='active'
         ).values_list('followee_id', flat=True)
-
         # 获取关注用户发布的内容
         queryset = Content.objects.filter(author_id__in=followed_users)
+        tag_id = self.request.query_params.get("tag_id")
+        if tag_id != "" and tag_id and tag_id is not None:
+            queryset = queryset.filter(tags=tag_id)
         queryset = self.filter_queryset(queryset)
-
         # 获取当前登录用户的相关数据（用于显示是否关注、点赞、收藏等状态）
         # 复用ContentViewSet中的方法
         content_view_set = ContentViewSet()
         content_view_set.request = request
         context_data = content_view_set.get_user_context_data(request)
-
         # 获取分页器实例
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = ContentWithFollowSerializer(page, many=True, context=context_data)
             # 使用自定义分页响应
             return self.get_paginated_response(serializer.data)
-
         # 如果没有分页，返回普通响应
         serializer = ContentWithFollowSerializer(queryset, many=True, context=context_data)
         return ApiResponse(serializer.data)
