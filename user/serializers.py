@@ -184,6 +184,9 @@ class UserLoginSerializer(serializers.Serializer):
         return data
 
 class UserPurchaseSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username', read_only=True)
+    user_nickname = serializers.CharField(source='user.user_nickname', read_only=True)
+
     class Meta:
         model = UserPurchase
         fields = '__all__'

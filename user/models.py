@@ -152,3 +152,10 @@ class UserPurchase(models.Model):
     class Meta:
         unique_together = ('user', 'content_type', 'object_id')
         db_table = 't_user_purchases'
+
+    # 在 UserPurchase 模型中添加
+    def get_username(self):
+        return self.user.username
+
+    def get_user_nickname(self):
+        return self.user.user_nickname

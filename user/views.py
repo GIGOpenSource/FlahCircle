@@ -178,6 +178,7 @@ class GroupViewSet(BaseViewSet):
     permission_classes = [permissions.IsAdminUser]  # 仅管理员可操作用户组
 
 
+@extend_schema(tags=["用户消费记录"])
 class UserPurchaseViewSet(viewsets.ModelViewSet):
     serializer_class = UserPurchaseSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -259,11 +260,11 @@ class UserPurchaseViewSet(viewsets.ModelViewSet):
                 from societies.models import Dynamic
                 try:
                     dynamic_obj = Dynamic.objects.get(id=object_id)
-                    from societies.serializers import DynamicSerializer
-                    serializer = DynamicSerializer(dynamic_obj)
+                    from societies.serializers import SocialDynamicSerializer
+                    serializer = SocialDynamicSerializer(dynamic_obj)
                     return ApiResponse({
                         'purchase_info': UserPurchaseSerializer(purchase).data,
-                        'dynamic_detail': serializer.data
+                        'content_detail': serializer.data
                     })
                 except Dynamic.DoesNotExist:
                     return ApiResponse(code=404, message="动态不存在")
@@ -277,7 +278,7 @@ class UserPurchaseViewSet(viewsets.ModelViewSet):
                     serializer = AdvertisementSerializer(ad_obj)
                     return ApiResponse({
                         'purchase_info': UserPurchaseSerializer(purchase).data,
-                        'advertisement_detail': serializer.data
+                        'content_detail': serializer.data
                     })
                 except Advertisement.DoesNotExist:
                     return ApiResponse(code=404, message="广告不存在")
