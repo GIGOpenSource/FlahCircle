@@ -20,7 +20,7 @@ docker compose version
 ```
 克隆代码仓库（替换为实际仓库地址）
 git clone https://github.com/your-username/flashcircle.git
-cd flashcircle
+cd flashcircle1
 ```
 
 ### 3.3. 配置说明
