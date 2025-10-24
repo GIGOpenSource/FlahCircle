@@ -12,14 +12,15 @@ from user.models import UserPurchase
 from rest_framework.decorators import action
 from django.db import transaction
 
+
 @extend_schema(tags=["广告管理"])
 @extend_schema_view(
     list=extend_schema(summary='获取广告列表',
-        parameters=[
-            OpenApiParameter(name='type', description='广告类型过滤'),
-            OpenApiParameter(name='banner_game_url', description='广告类型过滤'),
-        ]
-    ),
+                       parameters=[
+                           OpenApiParameter(name='type', description='广告类型过滤'),
+                           OpenApiParameter(name='banner_game_url', description='广告类型过滤'),
+                       ]
+                       ),
     retrieve=extend_schema(summary='获取广告详情'),
     create=extend_schema(summary='创建广告'),
     update=extend_schema(summary='更新广告'),
@@ -31,7 +32,7 @@ class AdvertisementViewSet(BaseViewSet):
     serializer_class = AdvertisementSerializer
     pagination_class = CustomPagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['type', 'is_active','name',]
+    filterset_fields = ['type', 'is_active', 'name', 'game_tags']
     search_fields = ['name', 'title', 'description']
     ordering_fields = ['create_time', 'update_time', 'sort_order']
     ordering = ['-create_time']
@@ -43,10 +44,13 @@ class AdvertisementViewSet(BaseViewSet):
         page = self.paginate_queryset(queryset)
         name = self.request.query_params.get("name")
         ads_type = self.request.query_params.get("type")
+        tag_id = self.request.query_params.get("game_tags")
         if name:
             queryset = queryset.filter(name__contains=name)
         if ads_type:
             queryset = queryset.filter(type=ads_type)
+        if tag_id != "" and tag_id and tag_id is not None:
+            queryset = queryset.filter(game_tags=tag_id)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
             # 使用自定义分页响应
@@ -54,8 +58,6 @@ class AdvertisementViewSet(BaseViewSet):
         # 如果没有分页，返回普通响应
         serializer = self.get_serializer(queryset, many=True)
         return ApiResponse(serializer.data)
-
-
 
     @extend_schema(summary='购买广告', tags=['购买管理'])
     @action(detail=True, methods=['post'], url_path='adv_purchase')
@@ -88,6 +90,7 @@ class AdvertisementViewSet(BaseViewSet):
             print(repr(e))
             return ApiResponse(code=500, message="购买失败")
         return ApiResponse(message="购买成功", data={'remaining_coins': user.gold_coin})
+
 
 class CarouselViewSet(BaseViewSet):
     queryset = Carousel.objects.all()
