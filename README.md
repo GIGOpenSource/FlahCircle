@@ -40,7 +40,7 @@ cd flashcircle1
 # 构建并启动容器（后台运行）
 docker compose up -d
 
-# 查看服务状态
+# 查看服务状态.
 docker compose ps
 ```
 ### 3.5. 验证部署
