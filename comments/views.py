@@ -22,9 +22,7 @@ class CommentViewSet(BaseViewSet):
     filterset_fields = ['target_id', 'type', 'parent_comment_id']
     search_fields = ['content', 'user_nickname']
     ordering_fields = ['create_time', 'like_count']
-
     # ordering = ['-create_time']
-
     def get_queryset(self):
         queryset = super().get_queryset()
         # 获取target_id参数
@@ -203,6 +201,83 @@ class ContentCommentViewSet(CommentViewSet):
             content.save(update_fields=['comment_count'])
         except Content.DoesNotExist:
             pass
+
+    # 在CommentViewSet类中添加以下方法
+    from drf_spectacular.utils import extend_schema_view, extend_schema, OpenApiParameter
+    @extend_schema(
+        # 接口描述
+        description="通过主评论ID（parent_comment_id）递归获取所有子评论（平级返回），支持分页（每页10条）",
+        # 定义参数（会在文档中显示输入框）
+        parameters=[
+            # parent_id 参数（必填）
+            OpenApiParameter(
+                name="parent_id",  # 参数名
+                location=OpenApiParameter.QUERY,  # 参数位置：查询参数（?parent_id=xxx）
+                description="主评论ID（作为parent_comment_id的评论ID）",  # 参数描述
+                required=True,  # 是否必填
+                type=int,  # 参数类型（整数，匹配评论ID的类型）
+            ),
+            # 分页页码参数（可选）
+            OpenApiParameter(
+                name="page",
+                location=OpenApiParameter.QUERY,
+                description="分页页码（默认第1页）",
+                required=False,
+                type=int,
+                default=1  # 默认值
+            )
+        ]
+    )
+    @action(detail=False, methods=['post'], url_path='all-children-by-parent')
+    def get_all_children_by_parent(self, request,pk=None):
+        """
+        通过parent_comment_id递归获取所有子评论（平级返回），支持分页
+        参数:
+        - parent_id: 主评论ID（作为parent_comment_id的评论ID）
+        """
+        # 获取parent_id参数
+        parent_id = request.query_params.get('parent_id')
+        if not parent_id:
+            return ApiResponse(code=400, message="缺少parent_id参数")
+
+        # 验证主评论是否存在
+        try:
+            Comment.objects.get(id=parent_id)
+        except Comment.DoesNotExist:
+            return ApiResponse(code=404, message="主评论不存在")
+
+        # 递归获取所有子评论ID（包括所有层级）
+        def get_all_child_ids(parent_id):
+            """递归获取某个评论下所有子评论的ID"""
+            child_ids = []
+            # 获取直接子评论
+            direct_children = Comment.objects.filter(parent_comment_id=parent_id).values_list('id', flat=True)
+            child_ids.extend(direct_children)
+            # 递归获取间接子评论
+            for child_id in direct_children:
+                child_ids.extend(get_all_child_ids(child_id))
+            return child_ids
+
+        # 获取所有子评论ID
+        all_child_ids = get_all_child_ids(parent_id)
+        if not all_child_ids:
+            return ApiResponse(data=[], message="没有子评论")
+
+        # 查询所有子评论并按创建时间排序
+        queryset = Comment.objects.filter(id__in=all_child_ids).order_by('create_time')
+
+        # 处理分页（默认10条/页，由CustomPagination配置）
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            # 获取用户上下文数据（包含点赞信息）
+            context_data = self.get_user_context_data(request)
+            serializer = self.get_serializer(page, many=True, context=context_data)
+            return self.get_paginated_response(serializer.data)
+
+        # 不分页情况
+        context_data = self.get_user_context_data(request)
+        serializer = self.get_serializer(queryset, many=True, context=context_data)
+        return ApiResponse(serializer.data)
 
     @action(detail=True, methods=['post'], url_path='purchase')
     @transaction.atomic
