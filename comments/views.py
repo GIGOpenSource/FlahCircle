@@ -174,6 +174,7 @@ class ContentCommentViewSet(CommentViewSet):
     def perform_create(self, serializer):
         # 保存评论并更新Content的comment_count
         comment = serializer.save(user_id=self.request.user.id, type='content')
+        print(comment)
         import logging
         logger = logging.getLogger(__name__)
         print(f"创建的实例数据: {comment}")
@@ -228,7 +229,7 @@ class ContentCommentViewSet(CommentViewSet):
             )
         ]
     )
-    @action(detail=False, methods=['post'], url_path='all-children-by-parent')
+    @action(detail=False, methods=['get'], url_path='all-children-by-parent')
     def get_all_children_by_parent(self, request,pk=None):
         """
         通过parent_comment_id递归获取所有子评论（平级返回），支持分页
@@ -244,7 +245,7 @@ class ContentCommentViewSet(CommentViewSet):
         try:
             Comment.objects.get(id=parent_id)
         except Comment.DoesNotExist:
-            return ApiResponse(code=404, message="主评论不存在")
+            return ApiResponse(code=404, message="当前无评论")
 
         # 递归获取所有子评论ID（包括所有层级）
         def get_all_child_ids(parent_id):
@@ -343,54 +344,62 @@ class DynamicCommentViewSet(CommentViewSet):
         return queryset
 
     def list(self, request, *args, **kwargs):
-        # 获取当前用户点赞信息
-        target_id = self.request.query_params.get('target_id', None)
-        if target_id is None:
-            return ApiResponse(code=400, message="缺少target_id参数")
-        all_comments = Comment.objects.filter(target_id=target_id, type='dynamic')
-
-        # 构建评论树
-        # comment_dict = {comment.id: comment for comment in all_comments}
-        children_map = defaultdict(list)
-
-        for comment in all_comments:
-            children_map[comment.parent_comment_id].append(comment)
-
-        # 获取所有顶级评论并排序
-        top_level_comments = list(children_map[0])
-
-        # 排序逻辑（按照您的需要调整）
-        top_level_comments.sort(key=lambda x: x.create_time)
-
-        # 序列化评论树
+        """
+        获取动态评论列表
+        """
+    #     # 获取当前用户点赞信息
+    #     target_id = self.request.query_params.get('target_id', None)
+    #     if target_id is None:
+    #         return ApiResponse(code=400, message="缺少target_id参数")
+    #     all_comments = Comment.objects.filter(target_id=target_id, type='dynamic')
+    #
+    #     # 构建评论树
+    #     # comment_dict = {comment.id: comment for comment in all_comments}
+    #     children_map = defaultdict(list)
+    #
+    #     for comment in all_comments:
+    #         children_map[comment.parent_comment_id].append(comment)
+    #
+    #     # 获取所有顶级评论并排序
+    #     top_level_comments = list(children_map[0])
+    #
+    #     # 排序逻辑（按照您的需要调整）
+    #     top_level_comments.sort(key=lambda x: x.create_time)
+    #
+    #     # 序列化评论树
+    #     context_data = self.get_user_context_data(request)
+    #
+    #     def serialize_comment_with_children(comment, depth=0):
+    #         serializer = self.get_serializer(comment, context=context_data)
+    #         comment_data = serializer.data
+    #
+    #         # 限制递归深度，避免过深嵌套
+    #         if depth < 3:  # 最多3层嵌套
+    #             child_comments = children_map.get(comment.id, [])
+    #             child_comments.sort(key=lambda x: x.create_time)
+    #
+    #             comment_data['children'] = [
+    #                 serialize_comment_with_children(child, depth + 1)
+    #                 for child in child_comments
+    #             ]
+    #         else:
+    #             comment_data['children'] = []
+    #
+    #         return comment_data
+    #
+    #     # 处理分页
+    #     page = self.paginate_queryset(top_level_comments)
+    #     if page is not None:
+    #         result_data = [serialize_comment_with_children(comment) for comment in page]
+    #         return self.get_paginated_response(result_data)
+    #
+    #     result_data = [serialize_comment_with_children(comment) for comment in top_level_comments]
+    #     return ApiResponse(result_data)
+        queryset = self.get_queryset()
         context_data = self.get_user_context_data(request)
+        serializer = self.get_serializer(queryset, many=True, context=context_data)
 
-        def serialize_comment_with_children(comment, depth=0):
-            serializer = self.get_serializer(comment, context=context_data)
-            comment_data = serializer.data
-
-            # 限制递归深度，避免过深嵌套
-            if depth < 3:  # 最多3层嵌套
-                child_comments = children_map.get(comment.id, [])
-                child_comments.sort(key=lambda x: x.create_time)
-
-                comment_data['children'] = [
-                    serialize_comment_with_children(child, depth + 1)
-                    for child in child_comments
-                ]
-            else:
-                comment_data['children'] = []
-
-            return comment_data
-
-        # 处理分页
-        page = self.paginate_queryset(top_level_comments)
-        if page is not None:
-            result_data = [serialize_comment_with_children(comment) for comment in page]
-            return self.get_paginated_response(result_data)
-
-        result_data = [serialize_comment_with_children(comment) for comment in top_level_comments]
-        return ApiResponse(result_data)
+        return ApiResponse(serializer.data)
 
     def get_user_context_data(self, request):
         """获取当前用户点赞的评论数据"""
@@ -413,7 +422,7 @@ class DynamicCommentViewSet(CommentViewSet):
     def perform_create(self, serializer):
         # 保存评论并更新Dynamic的comment_count
         comment = serializer.save(user_id=self.request.user.id, type='dynamic')
-
+        print(comment)
         # 更新Dynamic表的comment_count
         try:
             dynamic = Dynamic.objects.get(id=comment.target_id)
