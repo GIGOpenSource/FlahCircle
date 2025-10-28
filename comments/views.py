@@ -290,3 +290,5 @@ class DynamicCommentViewSet(CommentViewSet):
             print(repr(e))
             return ApiResponse(code=500, message="购买失败")
         return ApiResponse(message="购买成功", data={'remaining_coins': user.gold_coin})
+
+
