@@ -59,7 +59,8 @@ INSTALLED_APPS = [
     'comments',
     'rating',
     'corsheaders',
-    'ai_comment'
+    'ai_comment',
+    'django_apscheduler'
 ]
 
 AUTH_USER_MODEL = 'user.User'
