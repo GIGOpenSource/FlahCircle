@@ -10,6 +10,7 @@ class User(AbstractUser):
         ('normal', '普通用户'),
         ('vip', 'VIP用户'),
         ('svip', 'SVIP用户'),
+        ('robot', 'robot机器人用户'),
     )
     USER_STATUS = (
         (0, '正常'),
