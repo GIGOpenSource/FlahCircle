@@ -78,11 +78,8 @@ class Follow(models.Model):
         # 删除关注时减少计数
         if self.status == 'active':
             try:
-                follower_user = User.objects.get(id=self.follower_id)
                 followee_user = User.objects.get(id=self.followee_id)
-                follower_user.following_count = max(0, follower_user.following_count - 1)
                 followee_user.followers_count = max(0, followee_user.followers_count - 1)
-                follower_user.save(update_fields=['following_count'])
                 followee_user.save(update_fields=['followers_count'])
             except User.DoesNotExist:
                 pass
