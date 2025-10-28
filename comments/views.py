@@ -101,6 +101,30 @@ class ContentCommentViewSet(CommentViewSet):
     专门处理内容评论的ViewSet
     """
 
+    def get_queryset(self):
+        """
+        默认只获取动态评论（type='dynamic'）和顶级评论（parent_comment_id=0）
+        """
+        queryset = super().get_queryset()
+        queryset = queryset.filter(type='content')
+        # 筛选顶级评论（parent_comment_id为0或None）
+        queryset = queryset.filter(parent_comment_id=0)
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        """
+        获取动态评论列表
+        """
+        queryset = self.get_queryset()
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            # 使用自定义分页响应
+            return self.get_paginated_response(serializer.data)
+        context_data = self.get_user_context_data(request)
+        serializer = self.get_serializer(queryset, many=True, context=context_data)
+
+        return ApiResponse(serializer.data)
     def get_user_context_data(self, request):
         """获取当前用户点赞的评论数据"""
         context_data = {
@@ -139,8 +163,8 @@ class ContentCommentViewSet(CommentViewSet):
             })
         comment = serializer.save(**save_kwargs)
         logger = logging.getLogger(__name__)
-        print(f"创建的实例数据: {comment}")
-        print(f"序列化器数据: {serializer.data}")
+        # print(f"创建的实例数据: {comment}")
+        # print(f"序列化器数据: {serializer.data}")
         # 更新Content表的comment_count
         try:
             content = Content.objects.get(id=comment.target_id)
