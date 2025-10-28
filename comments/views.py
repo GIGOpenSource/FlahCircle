@@ -100,7 +100,7 @@ class ContentCommentViewSet(CommentViewSet):
     """
     专门处理内容评论的ViewSet
     """
-
+    pagination_class = CustomPagination
     def get_queryset(self):
         """
         默认只获取动态评论（type='dynamic'）和顶级评论（parent_comment_id=0）
@@ -206,7 +206,7 @@ class ContentCommentViewSet(CommentViewSet):
             ),
             # 分页页码参数（可选）
             OpenApiParameter(
-                name="page",
+                name="currentPage",
                 location=OpenApiParameter.QUERY,
                 description="分页页码（默认第1页）",
                 required=False,
@@ -222,15 +222,16 @@ class ContentCommentViewSet(CommentViewSet):
         参数:
         - parent_id: 主评论ID（作为parent_comment_id的评论ID）
         """
+
         # 获取parent_id参数
         parent_id = request.query_params.get('parent_id')
         # 第几页
-        try:
-            page = int(request.query_params.get('page', 1))
-            if page < 1:  # 确保页码不小于1
-                page = 1
-        except ValueError:
-            page = 1  # 非法页码默认返回第1页
+        # try:
+        #     currentPage = int(request.query_params.get('currentPage', 1))
+        #     if currentPage < 1:  # 确保页码不小于1
+        #         currentPage = 1
+        # except ValueError:
+        #     currentPage = 1  # 非法页码默认返回第1页
         if not parent_id:
             return ApiResponse(code=400, message="缺少parent_id参数")
         # 验证主评论是否存在
@@ -258,23 +259,17 @@ class ContentCommentViewSet(CommentViewSet):
         # 查询所有子评论并按创建时间排序
         queryset = Comment.objects.filter(id__in=all_child_ids).order_by('create_time')
 
-        page_size = 10
-        start = (page - 1) * page_size  # 计算起始索引（第1页：0，第2页：20，以此类推）
-        end = start + page_size  # 计算结束索引（第1页：20，第2页：40，以此类推）
-        queryset = queryset[start:end]
-
-
         # 处理分页（默认10条/页，由CustomPagination配置）
-        # page = self.paginate_queryset(queryset)
-
-        # if page is not None:
-        #     # 获取用户上下文数据（包含点赞信息）
-        #     context_data = self.get_user_context_data(request)
-        #     serializer = self.get_serializer(page, many=True, context=context_data)
-        #     return self.get_paginated_response(serializer.data)
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            # 获取用户上下文数据（包含点赞信息）
+            context_data = self.get_user_context_data(request)
+            serializer = self.get_serializer(page, many=True, context=context_data)
+            return self.get_paginated_response(serializer.data)
         context_data = self.get_user_context_data(request)
         serializer = self.get_serializer(queryset, many=True, context=context_data)
         return ApiResponse(serializer.data)
+
 
     @action(detail=True, methods=['post'], url_path='purchase')
     @transaction.atomic
