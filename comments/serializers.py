@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Comment
+from django.db.models import Q
 
 
 class CommentSerializer(serializers.ModelSerializer):
@@ -27,4 +28,4 @@ class CommentSerializer(serializers.ModelSerializer):
         """
         获取当前评论的子评论数
         """
-        return Comment.objects.filter(target_id=obj.target_id).count()
+        return Comment.objects.filter(~Q(parent_comment_id=0), target_id=obj.target_id, ).count()
