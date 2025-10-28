@@ -4,6 +4,8 @@ from rest_framework.decorators import action
 from django.db import transaction
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
+
+import comments
 from comments.models import Comment
 from comments.serializers import CommentSerializer
 from drf_spectacular.utils import extend_schema_view, extend_schema, OpenApiParameter
@@ -173,8 +175,22 @@ class ContentCommentViewSet(CommentViewSet):
 
     def perform_create(self, serializer):
         # 保存评论并更新Content的comment_count
-        comment = serializer.save(user_id=self.request.user.id, type='content')
+        user_nickname = self.request.user.user_nickname
+        save_kwargs = {
+            'user_id': self.request.user.id,
+            'type': 'content',
+            'user_nickname': user_nickname
+        }
         import logging
+        if 'parent_comment_id' in self.request.data and self.request.data['parent_comment_id']:
+            # 存在该参数时，获取父评论信息并添加回复字段
+            parent_comment_id = self.request.data['parent_comment_id']
+            obj = Comment.objects.get(id=parent_comment_id)  # 假设传入的ID一定有效（如果需要容错可加try）
+            save_kwargs.update({
+                'reply_to_user_id': obj.user_id,
+                'reply_to_user_nickname': obj.user_nickname
+            })
+        comment = serializer.save(**save_kwargs)
         logger = logging.getLogger(__name__)
         print(f"创建的实例数据: {comment}")
         print(f"序列化器数据: {serializer.data}")
@@ -412,8 +428,21 @@ class DynamicCommentViewSet(CommentViewSet):
 
     def perform_create(self, serializer):
         # 保存评论并更新Dynamic的comment_count
-        comment = serializer.save(user_id=self.request.user.id, type='dynamic')
-
+        user_nickname = self.request.user.user_nickname
+        save_kwargs = {
+            'user_id': self.request.user.id,
+            'type': 'dynamic',
+            'user_nickname': user_nickname
+        }
+        if 'parent_comment_id' in self.request.data and self.request.data['parent_comment_id']:
+            # 存在该参数时，获取父评论信息并添加回复字段
+            parent_comment_id = self.request.data['parent_comment_id']
+            obj = Comment.objects.get(id=parent_comment_id)  # 假设传入的ID一定有效（如果需要容错可加try）
+            save_kwargs.update({
+                'reply_to_user_id': obj.user_id,
+                'reply_to_user_nickname': obj.user_nickname
+            })
+        comment = serializer.save(**save_kwargs)
         # 更新Dynamic表的comment_count
         try:
             dynamic = Dynamic.objects.get(id=comment.target_id)
