@@ -44,5 +44,6 @@ urlpatterns = [
     path('api/comments/', include('comments.urls')),
     path('api/ratings/',include('rating.urls')),
     path('api/upload/', UploadResourceView.as_view(), name='upload_resource'),
+    path('api/ai_comment/', include('ai_comment.urls')),
 ]
 
