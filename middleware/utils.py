@@ -1,3 +1,5 @@
+import logging
+
 from django.core.paginator import EmptyPage
 from rest_framework.exceptions import NotFound
 from rest_framework.pagination import PageNumberPagination
@@ -128,3 +130,90 @@ def exclude_api_tag_hook(endpoints=None, **kwargs):
         filtered_endpoints.append(endpoint)
 
     return filtered_endpoints
+
+class LoggingUtil:
+    _instance = None
+    _lock = Lock()  # 单例锁
+    _file_lock = Lock()  # 文件操作锁（避免同一进程内多线程抢文件）
+
+    def __new__(cls, *args, **kwargs):
+        with cls._lock:
+            if not cls._instance:
+                cls._instance = super().__new__(cls)
+        return cls._instance
+
+    def __init__(self):
+        # 双重判断：确保只初始化一次
+        if hasattr(self, "_initialized") and self._initialized:
+            return
+
+        self.logger = logging.getLogger("ClipAI")
+        self.logger.setLevel(logging.INFO)
+        self.logger.propagate = False  # 禁止向Django默认日志传递
+        self._initialized = True  # 标记已初始化
+
+        # 1. 创建日志目录
+        log_dir = "logs"
+        os.makedirs(log_dir, exist_ok=True)  # 简化创建目录逻辑
+        self.log_file = os.path.join(log_dir, "clipai.log")
+
+        # 2. 最终版日志处理器：用文件锁+安全关闭
+        class SafeRotatingHandler(TimedRotatingFileHandler):
+            def emit(self, record):
+                # 同一进程内多线程安全：加锁写入
+                with LoggingUtil._file_lock:
+                    # 确保文件流存在
+                    if self.stream is None:
+                        self.stream = self._open()
+                    try:
+                        super().emit(record)
+                    except Exception:
+                        # 写入失败时关闭流，下次重新打开
+                        if self.stream:
+                            self.stream.close()
+                            self.stream = None
+                        raise
+
+            def doRollover(self):
+                with LoggingUtil._file_lock:
+                    # 安全关闭流
+                    if self.stream:
+                        self.stream.close()
+                        self.stream = None
+                    # 执行轮转（重命名文件）
+                    try:
+                        super().doRollover()
+                    except PermissionError:
+                        # 极端情况：文件仍被占用，延迟1秒重试一次
+                        import time
+                        time.sleep(1)
+                        super().doRollover()
+                    # 重新打开新文件
+                    self.stream = self._open()
+
+        # 3. 配置处理器：关闭delay，直接创建文件（避免延迟导致的流为空）
+        handler = SafeRotatingHandler(
+            self.log_file,
+            when="M",
+            interval=10,
+            backupCount=100,
+            encoding="utf-8",
+            delay=False,  # 关键：立即创建文件，确保stream初始化
+            utc=False
+        )
+        handler.suffix = "%Y-%m-%d_%H-%M.log"
+        formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+        handler.setFormatter(formatter)
+
+        # 4. 清除已有处理器（避免重复添加）
+        self.logger.handlers.clear()
+        self.logger.addHandler(handler)
+
+    def info(self, message):
+        # 确保日志消息是字符串（避免类型错误）
+        if not isinstance(message, str):
+            message = str(message)
+        self.logger.info(message)
+
+
+logger = logging.getLogger('info')
