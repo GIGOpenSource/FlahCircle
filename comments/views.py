@@ -253,9 +253,15 @@ class ContentCommentViewSet(CommentViewSet):
         """
         # 获取parent_id参数
         parent_id = request.query_params.get('parent_id')
+        # 第几页
+        try:
+            page = int(request.query_params.get('page', 1))
+            if page < 1:  # 确保页码不小于1
+                page = 1
+        except ValueError:
+            page = 1  # 非法页码默认返回第1页
         if not parent_id:
             return ApiResponse(code=400, message="缺少parent_id参数")
-
         # 验证主评论是否存在
         try:
             Comment.objects.get(id=parent_id)
@@ -278,19 +284,23 @@ class ContentCommentViewSet(CommentViewSet):
         all_child_ids = get_all_child_ids(parent_id)
         if not all_child_ids:
             return ApiResponse(data=[], message="没有子评论")
-
         # 查询所有子评论并按创建时间排序
         queryset = Comment.objects.filter(id__in=all_child_ids).order_by('create_time')
 
-        # 处理分页（默认10条/页，由CustomPagination配置）
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            # 获取用户上下文数据（包含点赞信息）
-            context_data = self.get_user_context_data(request)
-            serializer = self.get_serializer(page, many=True, context=context_data)
-            return self.get_paginated_response(serializer.data)
+        page_size = 10
+        start = (page - 1) * page_size  # 计算起始索引（第1页：0，第2页：20，以此类推）
+        end = start + page_size  # 计算结束索引（第1页：20，第2页：40，以此类推）
+        queryset = queryset[start:end]
 
-        # 不分页情况
+
+        # 处理分页（默认10条/页，由CustomPagination配置）
+        # page = self.paginate_queryset(queryset)
+
+        # if page is not None:
+        #     # 获取用户上下文数据（包含点赞信息）
+        #     context_data = self.get_user_context_data(request)
+        #     serializer = self.get_serializer(page, many=True, context=context_data)
+        #     return self.get_paginated_response(serializer.data)
         context_data = self.get_user_context_data(request)
         serializer = self.get_serializer(queryset, many=True, context=context_data)
         return ApiResponse(serializer.data)
