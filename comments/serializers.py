@@ -28,4 +28,5 @@ class CommentSerializer(serializers.ModelSerializer):
         """
         获取当前评论的子评论数
         """
-        return Comment.objects.filter(~Q(parent_comment_id=0), target_id=obj.target_id, ).count()
+        data = Comment.objects.filter(parent_comment_id=obj.id,).count()
+        return data
