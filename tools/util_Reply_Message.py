@@ -7,8 +7,7 @@
 @Date    ：2025/10/28 16:26 
 @description : 回复评论相关工具
 """
-from venv import create
-
+import logging
 import requests
 import random
 import json
@@ -21,7 +20,8 @@ from societies.models import Dynamic
 from comments.models import Comment
 from ai_comment.models import AIConfig as Config
 from user.models import User
-from middleware.utils import logger
+
+logger = logging.getLogger('info')
 
 
 class LargeModelUnit(object):
