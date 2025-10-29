@@ -92,8 +92,8 @@ def getFewDays(n: int):
     """
     today = datetime.now()
     n_days_ago = today - timedelta(days=n)
-    s1 = n_days_ago.strftime("%Y-%m-%d")
-    s2 = today.strftime("%Y-%m-%d")
+    s1 = n_days_ago.strftime("%Y-%m-%d 00:00:00")
+    s2 = today.strftime("%Y-%m-%d 23:59:59")
     return s1, s2
 
 
@@ -116,7 +116,10 @@ def sendMessagesToComment(botId: int, sendType: str = "comment"):
         dynamicData = Dynamic.objects.filter(create_time__range=getFewDays(days))
         dataList = list(contentData) + list(dynamicData)
     else:
-        commentData = Comment.objects.filter(create_time__range=getFewDays(days), parent_comment_id=botId)
+        botIdList = User.objects.filter(member_level='robot').values('id')
+        botIdList = [ item['id'] for item in botIdList]
+        print(f"机器人ID列表：{botIdList}")
+        commentData = Comment.objects.filter(create_time__range=getFewDays(days), user_id__in=botIdList)
         dataList = list(commentData)
     client = LargeModelUnit(aiConfig.model, aiConfig.api_key, aiConfig.base_url)
     sum_count = dataList.__len__()
@@ -165,7 +168,7 @@ def saveComment(data: Content | Dynamic | Comment, message: str, user: User, sen
         createData.parent_comment_id = data.id
         createData.target_id = data.target_id
         createData.reply_to_user_id = user.id
-        createData.reply_to_user_nickname = data.user_nickname
+        createData.reply_to_user_nickname = user.user_nickname
     createData.type = data.type if data.type == "dynamic" else "content"
     createData.content = message
     createData.like_count = 0
