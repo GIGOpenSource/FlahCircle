@@ -140,8 +140,8 @@ class DjangoTaskScheduler:
                 self.scheduler.add_job(
                     func,
                     trigger='cron',  # 定时循环执行用cron触发器
-                    job_id=job_id,
-                    hour='*',  # 每小时（0-23点均执行）
+                    id=job_id,
+                    hour=0,  # 每小时（0-23点均执行）
                     minute=0,  # 固定在每小时的0分执行（可根据需要调整，如minute=30表示每小时30分）
                     # minute='*',  # 每分钟执行一次（0-59分钟均触发）
                     replace_existing=True,  # 若存在同名job_id，替换旧任务
