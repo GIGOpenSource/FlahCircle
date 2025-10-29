@@ -482,7 +482,7 @@ class TaskSchedulerView(APIView):
             OpenApiParameter(
                 name='method',
                 location=OpenApiParameter.QUERY,
-                description='区分执行，comment、reply、timing',
+                description='区分执行，区分执行 comment(同时创建评论回复）、timing',
                 required=True,
                 type=str
             )
@@ -576,7 +576,7 @@ class TaskSchedulerViewAction(APIView):
             OpenApiParameter(
                 name='method',
                 location=OpenApiParameter.QUERY,
-                description='区分执行 comment、reply、timing',
+                description='区分执行 comment(同时创建评论回复）、timing',
                 required=True,
                 type=str
             ),
@@ -599,34 +599,44 @@ class TaskSchedulerViewAction(APIView):
             method = request.query_params.get('method')
             robot_id = request.query_params.get('robot_id')
             action = request.query_params.get('action')
-            job_id = f'mission_{method}_{robot_id}'
             try:
                 robot = User.objects.get(id=robot_id)
             except User.DoesNotExist:
                 return ApiResponse(code=404, message='未找到对应的机器人用户')
-
-            if not robot_id or not method:
-                return ApiResponse(code=400, message='定时任务ID和操作方法是必需的')
+            if not robot_id or not method or not action:
+                return ApiResponse(code=400, message='定时任务ID、操作方法和动作类型是必需的')
             method_map = {
                 'pause': self.pause_job,
                 'resume': self.resume_job,
                 'get': self.get_job,
                 'delete': self.delete_job
             }
-            if action in method_map:
-                response = method_map[action](job_id)
-                # 根据操作类型更新running_state字段
-                if action == 'delete':
-                    robot.running_state = 'delete'  # 更新状态为删除
-                elif action == 'pause':
-                    robot.running_state = 'pause'  # 更新状态为暂停
-                elif action == 'resume':
-                    robot.running_state = 'running'  # 更新状态为运行中
-                robot.save(update_fields=['running_state'])  # 保存状态更新
-                return response
-            else:
+            if action not in method_map:
                 return ApiResponse(code=400, message='不支持的操作类型')
-            return response
+            # 如果method为comment，则需要处理两个任务
+            if method == 'comment':
+                job_ids = [
+                    f'mission_comment_{robot_id}',
+                    f'mission_reply_{robot_id}'
+                ]
+            else:
+                job_ids = [f'mission_{method}_{robot_id}']
+            # 对每个任务ID执行操作
+            responses = []
+            for job_id in job_ids:
+                response = method_map[action](job_id)
+                responses.append(response)
+            # 根据操作类型更新running_state字段
+            if action == 'delete':
+                robot.running_state = 'delete'  # 更新状态为删除
+            elif action == 'pause':
+                robot.running_state = 'pause'  # 更新状态为暂停
+            elif action == 'resume':
+                robot.running_state = 'running'  # 更新状态为运行中
+            robot.save(update_fields=['running_state'])  # 保存状态更新
+            logging.info(f'任务状态更新成功：{robot.running_state}')
+            # 返回最后一个任务的响应结果
+            return responses[-1]
         except Exception as e:
             return ApiResponse(code=400, message=f"操作失败：{str(e)}")
     def pause_job(self, job_id):
