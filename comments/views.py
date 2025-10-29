@@ -459,7 +459,7 @@ class TaskSchedulerView(APIView):
             ),
             OpenApiParameter(
                 name='method',
-                location=OpenApiParameter.PATH,
+                location=OpenApiParameter.QUERY,
                 description='区分执行，',
                 required=True,
                 type=int
@@ -482,6 +482,11 @@ class TaskSchedulerView(APIView):
         - robot_id: 机器人ID（路径参数）
         """
         try:
+            method = request.query_params.get('method')
+            if not method:
+                return ApiResponse(code=400, message='method参数是必需的')
+
+            print(method)
             if not robot_id:
                 return ApiResponse(code=400, message='robot_id是必需的')
             # 获取评论对象以获取exec_id
