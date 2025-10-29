@@ -8,15 +8,19 @@ from follows.models import Follow
 from societies.models import Dynamic
 from tags.models import Tag
 from .models import UserPurchase
+from middleware.autoTask import scheduler
 
 User = get_user_model()
 
+
 class GroupSerializer(serializers.ModelSerializer):
     """用户组序列化器"""
+
     class Meta:
         model = Group
         fields = ['id', 'name']
         read_only_fields = ['id']
+
 
 class UserSerializer(serializers.ModelSerializer):
     """用户信息序列化器"""
@@ -40,9 +44,11 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            'id', 'username', 'user_nickname', 'email', 'phone', 'avatar','likes_count','following_count','followers_count',
-            'member_level', 'user_bio', 'groups', 'group_ids', 'date_joined', 'session_id', 'is_follower','is_vip','vip_days','gold_coin',
-            'tags','status','running_state'
+            'id', 'username', 'user_nickname', 'email', 'phone', 'avatar', 'likes_count', 'following_count',
+            'followers_count',
+            'member_level', 'user_bio', 'groups', 'group_ids', 'date_joined', 'session_id', 'is_follower', 'is_vip',
+            'vip_days', 'gold_coin',
+            'tags', 'status', 'running_state'
         ]
         read_only_fields = ['id', 'username', 'date_joined']
 
@@ -108,6 +114,15 @@ class UserSerializer(serializers.ModelSerializer):
         instance.user_bio = validated_data.get('user_bio', instance.user_bio)
         instance.status = validated_data.get('status', instance.status)
         instance.gold_coin = validated_data.get('gold_coin', instance.gold_coin)
+        if instance.member_level == "robot":
+            mission_reply = f"mission_reply_{instance.id}"
+            mission_comment = f"mission_comment_{instance.id}"
+            if validated_data.get("status") == 1:
+                scheduler.pause_job(mission_comment)
+                scheduler.pause_job(mission_reply)
+            elif validated_data.get("status") == 0:
+                scheduler.resume_job(mission_comment)
+                scheduler.resume_job(mission_reply)
         instance.save()
         # 处理标签更新
         if 'tags' in validated_data:
@@ -167,6 +182,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         user.save()
         return user
 
+
 class UserLoginSerializer(serializers.Serializer):
     username = serializers.CharField(required=True, max_length=150)
     password = serializers.CharField(required=True, write_only=True)
@@ -182,6 +198,7 @@ class UserLoginSerializer(serializers.Serializer):
             raise serializers.ValidationError("密码不能为空")
 
         return data
+
 
 class UserPurchaseSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username', read_only=True)
