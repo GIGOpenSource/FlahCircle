@@ -564,7 +564,7 @@ class TaskSchedulerViewAction(APIView):
     """配置定时任务的接口"""
     @extend_schema(
         summary='任务的暂停、恢复、删除、获取',
-        description='对指定任务执行暂停、恢复、删除、获取等操作',
+        description='对指定任务执行添加、暂停、恢复、删除、获取等操作',
         parameters=[
             OpenApiParameter(
                 name='robot_id',
@@ -609,7 +609,7 @@ class TaskSchedulerViewAction(APIView):
                 'pause': self.pause_job,
                 'resume': self.resume_job,
                 'get': self.get_job,
-                'delete': self.delete_job
+                'delete': self.delete_job,
             }
             if action not in method_map:
                 return ApiResponse(code=400, message='不支持的操作类型')
@@ -624,7 +624,7 @@ class TaskSchedulerViewAction(APIView):
             # 对每个任务ID执行操作
             responses = []
             for job_id in job_ids:
-                response = method_map[action](job_id)
+                response = method_map[action](job_id) if action != 'add' else method_map[action](request)
                 responses.append(response)
             # 根据操作类型更新running_state字段
             if action == 'delete':
@@ -633,6 +633,8 @@ class TaskSchedulerViewAction(APIView):
                 robot.running_state = 'pause'  # 更新状态为暂停
             elif action == 'resume':
                 robot.running_state = 'running'  # 更新状态为运行中
+            elif action == 'add':
+                robot.running_state = 'running'
             robot.save(update_fields=['running_state'])  # 保存状态更新
             logging.info(f'任务状态更新成功：{robot.running_state}')
             # 返回最后一个任务的响应结果

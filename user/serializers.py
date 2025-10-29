@@ -1,3 +1,5 @@
+import logging
+
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
@@ -7,6 +9,7 @@ from chat.models import Session
 from follows.models import Follow
 from societies.models import Dynamic
 from tags.models import Tag
+from tools.util_Reply_Message import sendMessagesToComment
 from .models import UserPurchase
 from middleware.autoTask import scheduler
 
@@ -51,6 +54,37 @@ class UserSerializer(serializers.ModelSerializer):
             'tags', 'status', 'running_state'
         ]
         read_only_fields = ['id', 'username', 'date_joined']
+    def create(self, validated_data):
+        """
+        重写create方法，在创建用户时处理任务相关逻辑
+        """
+        # 创建用户实例
+        user = User(**validated_data)
+        user.save()
+        robot_id = user.id
+        job_id = f'mission_comment_{robot_id}'
+        scheduler.add_job(
+            func=sendMessagesToComment,
+            trigger='daily',  # 明确指定具体小时
+            job_id=job_id,
+            nums=5,
+            args=(robot_id, "comment",),
+            kwargs={}
+        )
+        logging.info('添加评论任务成功')
+        job_id = f'mission_reply_{robot_id}'
+        scheduler.add_job(
+            func=sendMessagesToComment,
+            trigger='daily',  # 明确指定具体小时
+            job_id=job_id,
+            nums=5,
+            args=(robot_id, "reply",),
+            kwargs={}
+        )
+        logging.info('回复评论任务成功')
+        user.running_state = 'running'
+        user.save(update_fields=['running_state'])  # 保存状态更新
+        return user
 
     def get_is_follower(self, obj):
         """
