@@ -18,7 +18,7 @@ from contents.models import Content
 from middleware.base_views import BaseViewSet
 from middleware.utils import ApiResponse, CustomPagination
 from societies.models import Dynamic
-
+import logging
 class CommentViewSet(BaseViewSet):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
@@ -168,7 +168,7 @@ class ContentCommentViewSet(CommentViewSet):
                 'reply_to_user_nickname': obj.user_nickname
             })
         comment = serializer.save(**save_kwargs)
-        logger = logging.getLogger(__name__)
+
         # print(f"创建的实例数据: {comment}")
         # print(f"序列化器数据: {serializer.data}")
         # 更新Content表的comment_count
@@ -179,9 +179,7 @@ class ContentCommentViewSet(CommentViewSet):
         except Content.DoesNotExist:
             pass
         except Exception as e:
-            import logging
-            logger = logging.getLogger(__name__)
-            logger.exception("更新Content评论数时出错")
+            logging.exception("更新Content评论数时出错")
 
     def perform_destroy(self, instance):
         # 减少Content表的comment_count
@@ -456,6 +454,13 @@ class TaskSchedulerView(APIView):
                 name='robot_id',
                 location=OpenApiParameter.PATH,
                 description='机器人ID',
+                required=True,
+                type=int
+            ),
+            OpenApiParameter(
+                name='method',
+                location=OpenApiParameter.PATH,
+                description='区分执行，',
                 required=True,
                 type=int
             )
