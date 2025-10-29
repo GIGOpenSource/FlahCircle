@@ -114,7 +114,7 @@ class DjangoTaskScheduler:
                     kwargs=kwargs.get('kwargs', {})
                 )
                 logging.info(f"每月任务 {job_id} 添加成功，每月在{selected_dates}号执行")
-            if trigger == "fixed":
+            elif trigger == "fixed":
                 """
                 每fixed 
                 """
@@ -127,7 +127,7 @@ class DjangoTaskScheduler:
                     kwargs=kwargs.get('kwargs', {})
                 )
                 logging.info(f"固定任务 {job_id} 添加成功，每日执行{nums}次，时间点：{fixed_time}时")
-            if trigger == "fixed213":
+            elif trigger == "fixed213":
                 self.scheduler.add_job(
                         func,
                         trigger=trigger,
@@ -135,6 +135,20 @@ class DjangoTaskScheduler:
                         replace_existing=replace_existing, **kwargs
                 )
                 logging.info(f"任务 {job_id} 添加成功")
+            elif trigger == 'timing':
+                # 每小时执行一次：使用cron触发器，分钟固定为0（整点执行），小时不限制（* 表示每小时）
+                self.scheduler.add_job(
+                    func,
+                    trigger='cron',  # 定时循环执行用cron触发器
+                    job_id=job_id,
+                    hour='*',  # 每小时（0-23点均执行）
+                    minute=0,  # 固定在每小时的0分执行（可根据需要调整，如minute=30表示每小时30分）
+                    # minute='*',  # 每分钟执行一次（0-59分钟均触发）
+                    replace_existing=True,  # 若存在同名job_id，替换旧任务
+                    args=(),  # 无参数传递时用空元组
+                    kwargs={}  # 无关键字参数时用空字典
+                )
+                logging.info(f"定时任务{job_id} 添加成功")
         except Exception as e:
             logging.info(f"添加任务 {job_id} 失败: {e}")
 

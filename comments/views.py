@@ -1,5 +1,6 @@
 from datetime import datetime
 from collections import defaultdict
+from pickle import FALSE
 
 from django.http import JsonResponse
 from rest_framework.decorators import action
@@ -13,12 +14,14 @@ from comments.serializers import CommentSerializer
 from drf_spectacular.utils import extend_schema_view, extend_schema, OpenApiParameter
 
 from middleware.autoTask import scheduler
-from user.models import UserPurchase
+from tools.util_Reply_Message import sendMessagesToComment
+from user.models import UserPurchase, User
 from contents.models import Content
 from middleware.base_views import BaseViewSet
 from middleware.utils import ApiResponse, CustomPagination
 from societies.models import Dynamic
 import logging
+from django.utils import timezone
 class CommentViewSet(BaseViewSet):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
@@ -443,6 +446,27 @@ class DynamicCommentViewSet(CommentViewSet):
 def example_robot(rot):
     print("执行定时任务")
     print( rot)
+
+
+def update_vip_status():
+    """
+    更新用户VIP状态：
+    - vip_days为空（NULL）的用户，is_vip设为False
+    - vip_days小于当前时间（已过期）的用户，is_vip设为False
+    """
+    current_time = timezone.now()
+
+    # 1. 筛选 vip_days 为空且当前是VIP的用户
+    null_vip_users = User.objects.filter(vip_days__isnull=True, is_vip=True)
+    # 2. 筛选 vip_days 过期且当前是VIP的用户
+    expired_vip_users = User.objects.filter(vip_days__lt=current_time, is_vip=True)
+    # 合并两个查询集（使用 | 操作符，无需Q函数）
+    target_users = null_vip_users | expired_vip_users
+    # 批量更新状态
+    updated_count = target_users.update(is_vip=False)
+    return f"已更新 {updated_count} 位用户的VIP状态为False（包含未设置VIP和已过期用户）"
+
+
 @extend_schema(tags=['任务执行 定时）'])
 class TaskSchedulerView(APIView):
     """配置定时任务的接口"""
@@ -454,15 +478,13 @@ class TaskSchedulerView(APIView):
                 name='robot_id',
                 location=OpenApiParameter.PATH,
                 description='机器人ID',
-                required=True,
                 type=int
             ),
             OpenApiParameter(
                 name='method',
                 location=OpenApiParameter.QUERY,
-                description='区分执行，',
-                required=True,
-                type=int
+                description='区分执行，comment、reply、timing',
+                type=str
             )
         ],
         request=None,
@@ -491,22 +513,34 @@ class TaskSchedulerView(APIView):
                 return ApiResponse(code=400, message='robot_id是必需的')
             # 获取评论对象以获取exec_id
             try:
+                if method == 'comment':
+                    job_id = f'mission_comment_{robot_id}'
+                    scheduler.add_job(
+                        func=sendMessagesToComment,
+                        trigger='daily',  # 明确指定具体小时
+                        job_id=job_id,
+                        nums=3,
+                        args=(robot_id,),
+                        kwargs={}
+                    )
+                    logging.info('添加评论任务成功')
+                elif method == 'reply':
+                    comment = Comment.objects.get(id=robot_id)
+                elif method == 'timing':
+                    scheduler.add_job(
+                        update_vip_status,
+                        trigger='timing',
+                        job_id='update_vip_status',
+                    )
+                    logging.info('添加定时任务成功')
+                else:
+                    return ApiResponse(code=400, message='method参数错误')
                 # 添加机器人评论任务
-                job_id = f'mission_comment_{robot_id}'
-                scheduler.add_job(
-                    func=example_robot,
-                    trigger='daily',  # 明确指定具体小时
-                    job_id=job_id,
-                    nums=2,
-                    args=(robot_id,),
-                    kwargs={}
-                )
-                print('添加任务成功')
             except Comment.DoesNotExist:
                 return ApiResponse(code=404, message='未找到对应的评论任务')
-            return ApiResponse(message='任务创建成功', status=200)
+            return ApiResponse(message='任务创建成功')
         except Exception as e:
-            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+            return ApiResponse(code=400, message=f"操作失败：{str(e)}")
 
 # 在后续使用 针对任务的暂停 恢复 删除
 # @extend_schema(tags=['任务执行（定时/非定时）'])
