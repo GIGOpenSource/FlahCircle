@@ -1,26 +1,65 @@
+version: '3.8'
+
+networks:
+  flashc_net:
+    name: flashc_net
+
+volumes:
+  pgdata:
+    driver: local
+  staticfiles:
+    driver: local
+  nginx_logs:
+    driver: local
+
 services:
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: gig-nginx
+    ports:
+      - "80:80"
+      - "8081:8081"
+      - "8000:8000"
+    volumes:
+      - ./pages/app/dist/build/h5/:/usr/share/nginx/html/gig-x/
+      - ./pages/admin/dist/:/usr/share/nginx/html/gig-admin/
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - staticfiles:/usr/share/nginx/html/static
+      - nginx_logs:/var/log/nginx
+    networks:
+      - flashc_net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+    depends_on:
+      - web
+
   web:
     build: .
     container_name: flashc_web
+    # 关键：所有多行命令与 " 对齐（4个空格）
     command: sh -c "
-      find . -path \"*/migrations/*.py\" -not -name \"__init__.py\" -delete &&
-      find . -path \"*/migrations/*.pyc\" -delete &&
-      python manage.py makemigrations &&
-      python manage.py migrate --noinput && 
-      python manage.py runserver 0.0.0.0:8000"
+        find . -path '*/migrations/*.py' -not -name '__init__.py' -delete &&
+        find . -path '*/migrations/*.pyc' -delete &&
+        python manage.py makemigrations &&
+        python manage.py migrate --noinput &&
+        python manage.py collectstatic --noinput &&
+        python manage.py runserver 0.0.0.0:8000"
     ports:
       - "10080:8000"
     volumes:
-      - ./staticfiles:/app/staticfiles
+      - staticfiles:/app/staticfiles
     environment:
       - DJANGO_SETTINGS_MODULE=FlashCircle.settings
       - ALLOWED_HOSTS=*
       - POSTGRES_HOST=db
       - POSTGRES_DB=flashc
       - POSTGRES_USER=flashc
-      - POSTGRES_PORT=5432
-      # 引用阿里云 OSS 变量（从 .env 读取）
       - POSTGRES_PASSWORD=flashc
+      - POSTGRES_PORT=5432
       - ALIYUN_ACCESS_KEY_ID=${ALIYUN_ACCESS_KEY_ID}
       - ALIYUN_ACCESS_KEY_SECRET=${ALIYUN_ACCESS_KEY_SECRET}
       - ALIYUN_OSS_ENDPOINT=${ALIYUN_OSS_ENDPOINT}
@@ -29,8 +68,8 @@ services:
       - db
     networks:
       - flashc_net
+    restart: unless-stopped
 
-  # 数据库服务
   db:
     image: postgres:16-alpine
     container_name: flahcicle_db
@@ -38,18 +77,16 @@ services:
       - POSTGRES_DB=flashc
       - POSTGRES_USER=flashc
       - POSTGRES_PASSWORD=flashc
+      - PGDATA=/var/lib/postgresql/data/pgdata
     ports:
       - "5432:5432"
     volumes:
-      - ./pgdata:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql/data
     networks:
       - flashc_net
-
-volumes:
-  pgdata:
-
-
-networks:
-  flashc_net:
-    name: flashc_net
-
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U flashc -d flashc"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
