@@ -1,12 +1,18 @@
 from datetime import datetime
 from collections import defaultdict
+
+from django.http import JsonResponse
 from rest_framework.decorators import action
 from django.db import transaction
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
+from rest_framework.views import APIView
+
 from comments.models import Comment
 from comments.serializers import CommentSerializer
 from drf_spectacular.utils import extend_schema_view, extend_schema, OpenApiParameter
+
+from middleware.autoTask import scheduler
 from user.models import UserPurchase
 from contents.models import Content
 from middleware.base_views import BaseViewSet
@@ -436,3 +442,124 @@ class DynamicCommentViewSet(CommentViewSet):
         return ApiResponse(message="购买成功", data={'remaining_coins': user.gold_coin})
 
 
+def example_robot(rot):
+    print("执行定时任务")
+    print( rot)
+@extend_schema(tags=['任务执行 定时）'])
+class TaskSchedulerView(APIView):
+    """配置定时任务的接口"""
+    @extend_schema(
+        summary='创建机器人任务',
+        description='根据robot_id创建机器人评论任务',
+        parameters=[
+            OpenApiParameter(
+                name='robot_id',
+                location=OpenApiParameter.PATH,
+                description='机器人ID',
+                required=True,
+                type=int
+            )
+        ],
+        request=None,
+        responses={
+            200: {
+                'description': '任务创建成功',
+            },
+            400: {
+                'description': '参数错误或任务创建失败',
+            }
+        }
+    )
+    def post(self, request, robot_id):
+        """
+        创建机器人任务
+        参数:
+        - robot_id: 机器人ID（路径参数）
+        """
+        try:
+            if not robot_id:
+                return ApiResponse(code=400, message='robot_id是必需的')
+            # 获取评论对象以获取exec_id
+            try:
+                # 添加机器人评论任务
+                job_id = f'mission_comment_{robot_id}'
+                scheduler.add_job(
+                    func=example_robot,
+                    trigger='daily',  # 明确指定具体小时
+                    job_id=job_id,
+                    nums=2,
+                    args=(robot_id,),
+                    kwargs={}
+                )
+                print('添加任务成功')
+            except Comment.DoesNotExist:
+                return ApiResponse(code=404, message='未找到对应的评论任务')
+            return ApiResponse(message='任务创建成功', status=200)
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+# 在后续使用 针对任务的暂停 恢复 删除
+# @extend_schema(tags=['任务执行（定时/非定时）'])
+# class TaskSchedulerView(APIView):
+#     """配置定时任务的接口"""
+#     @extend_schema(
+#         summary='任务的暂停、恢复、删除、获取等操作',
+#         description='对指定任务执行暂停、恢复、删除、获取等操作',
+#         request={
+#             'application/json': {
+#                 'type': 'object',
+#                 'properties': {
+#                     'method': {
+#                         'type': 'string',
+#                         'description': '操作类型：pause/resume/delete/get',
+#                         'enum': ['pause', 'resume', 'delete', 'get'],
+#                         'example': 'pause'
+#                     }
+#                 },
+#                 'required': ['method']
+#             }
+#         },
+#         responses={
+#             200: {
+#                 'description': '操作成功',
+#             },
+#         }
+#     )
+#     def post(self, request, task_id):
+#         try:
+#             method = request.data.get('method')
+#             if not task_id or not method:
+#                 return ApiResponse(code=400, msg='任务ID和操作方法是必需的')
+#
+#             method_map = {
+#                 'pause': self.pause_job,
+#                 'resume': self.resume_job,
+#                 'get': self.get_job,
+#                 'delete': self.delete_job
+#             }
+#             job_id = Comment.objects.filter(id=request.data.get('task_id')).exec_id
+#             task = TasksSimpletask.objects.get(id=task_id)
+#             job_id = task.exec_id  # 直接获取 exec_id 字段
+#
+#             if method == 'pause':
+#                 # 暂停任务：更新状态为 paused
+#                 task.exec_status = "paused"
+#             elif method == 'resume':
+#                 task.exec_status = "execting"
+#
+#             response = method_map[method](job_id)
+#             task.save()
+#             return response
+#         except Exception as e:
+#             return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+#     def pause_job(self, job_id):
+#         scheduler.pause_job(job_id)
+#         return ApiResponse(message=f'任务已暂停', status=200)
+#     def resume_job(self, job_id):
+#         scheduler.resume_job(job_id)
+#         return ApiResponse(message=f'任务已继续', status=200)
+#     def get_job(self, job_id):
+#         scheduler.get(job_id)
+#     def delete_job(self, job_id):
+#         scheduler.delete_job(job_id)
+#
