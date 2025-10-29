@@ -109,13 +109,14 @@ def sendMessagesToComment(botId: int, sendType: str = "comment"):
     2.获取n天前的内容和动态
     3.生成提示词并保存
     """
+    days = 7
     aiConfig = Config.objects.filter(enabled=True).first()
     if sendType == "comment":
-        contentData = Content.objects.filter(create_time__range=getFewDays(7))
-        dynamicData = Dynamic.objects.filter(create_time__range=getFewDays(7))
+        contentData = Content.objects.filter(create_time__range=getFewDays(days))
+        dynamicData = Dynamic.objects.filter(create_time__range=getFewDays(days))
         dataList = list(contentData) + list(dynamicData)
     else:
-        commentData = Comment.objects.filter(create_time__range=getFewDays(2))
+        commentData = Comment.objects.filter(create_time__range=getFewDays(days))
         dataList = list(commentData)
     client = LargeModelUnit(aiConfig.model, aiConfig.api_key, aiConfig.base_url)
     sum_count = dataList.__len__()
