@@ -15,14 +15,13 @@ import json
 from django.db import transaction
 from datetime import datetime, timedelta
 from typing import List, Dict
-
 from pyexpat.errors import messages
-
 from contents.models import Content
 from societies.models import Dynamic
 from comments.models import Comment
 from ai_comment.models import AIConfig as Config
 from user.models import User
+from middleware.utils import logger
 
 
 class LargeModelUnit(object):
@@ -101,7 +100,7 @@ def getFewDays(n: int):
 def sendMessagesToComment(botId: int):
     """
     发送消息
-    :param botId:
+    :param botId:机器人ID
     :return:
     """
     """
@@ -121,26 +120,28 @@ def sendMessagesToComment(botId: int):
     for data in dataList:
         message_prompt = genterateReplyMessages(data, data.type)
         falg, message = client.generateToDeepSeek(message_prompt)
-        print(message)
         if falg:
             success_count += 1
-            comment = saveComment(data, data.id, message, User.objects.get(id=botId))
-            print(comment)
+            saveComment(data, message, User.objects.get(id=botId))
         else:
             error_count += 1
             error_list.append(data.title)
+            logger.error(f"{data.title}生成失败,原因为：{message}")
+    logger.info(f"总{sum_count}条，成功{success_count}条，失败{error_count}条")
     # return
 
-def saveComment(data: Content | Dynamic, tragetId: int, message: str, user: User):
+def saveComment(data: Content | Dynamic,  message: str, user: User):
     """
     保存评论
     :param data:
-    :param tragetId:
+
     :param message:
     :param user:
     :return:
     """
-    createData = Comment.objects.get(data.type, target_id=tragetId, parent_comment_id=0)
+    createData =Comment.objects.create(target_id=data.id,parent_comment_id=0)
+    createData.type = data.type if data.type == "dynamic" else "content"
+    createData.id = createData.id
     createData.content = message
     createData.user_id = user.id
     createData.user_nickname = user.user_nickname
