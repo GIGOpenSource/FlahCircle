@@ -116,13 +116,15 @@ def sendMessagesToComment(botId: int, sendType: str = "comment"):
         dynamicData = Dynamic.objects.filter(create_time__range=getFewDays(days))
         dataList = list(contentData) + list(dynamicData)
     else:
-        commentData = Comment.objects.filter(create_time__range=getFewDays(days),parent_comment_id=botId)
+        commentData = Comment.objects.filter(create_time__range=getFewDays(days), parent_comment_id=botId)
         dataList = list(commentData)
     client = LargeModelUnit(aiConfig.model, aiConfig.api_key, aiConfig.base_url)
     sum_count = dataList.__len__()
     success_count = 0
     error_count = 0
     error_list = []
+    if sum_count >= 10:
+        dataList = random.sample(dataList, k=10)
     for data in dataList:
         if sendType == "reply":
             message_prompt = genterateReplyMessages(data, "comment")
