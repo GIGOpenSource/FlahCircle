@@ -116,10 +116,10 @@ def sendMessagesToComment(botId: int, sendType: str = "comment"):
         dynamicData = Dynamic.objects.filter(create_time__range=getFewDays(days))
         dataList = list(contentData) + list(dynamicData)
     else:
-        botIdList = User.objects.filter(member_level='robot').values('id')
-        botIdList = [ item['id'] for item in botIdList]
-        print(f"机器人ID列表：{botIdList}")
-        commentData = Comment.objects.filter(create_time__range=getFewDays(days), user_id__in=botIdList)
+        # botIdList = User.objects.filter(member_level='robot').values('id')
+        # botIdList = [ item['id'] for item in botIdList]
+        # print(f"机器人ID列表：{botIdList}")
+        commentData = Comment.objects.filter(create_time__range=getFewDays(days))
         dataList = list(commentData)
     client = LargeModelUnit(aiConfig.model, aiConfig.api_key, aiConfig.base_url)
     sum_count = dataList.__len__()
