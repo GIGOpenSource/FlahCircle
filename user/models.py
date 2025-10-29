@@ -33,7 +33,7 @@ class User(AbstractUser):
     status = models.IntegerField(choices=USER_STATUS, default=0, verbose_name="用户状态")  # 新增状态字段
     latitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True, verbose_name="纬度")
     longitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True, verbose_name="经度")
-
+    running_state = models.CharField(max_length=50, blank=True, null=True, verbose_name="机器人执行状态")
     # 保留Django内置的groups和user_permissions用于分组权限
     groups = models.ManyToManyField(
         Group,

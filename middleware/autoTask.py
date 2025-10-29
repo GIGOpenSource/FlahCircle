@@ -56,20 +56,31 @@ class DjangoTaskScheduler:
                 """
                 if nums is None or not (1 <= nums <= 5):
                     raise ValueError("当trigger为'daily'时，nums必须为1~5之间的整数")
-                random_hours = random.sample(range(24), nums)
-                random_hours.sort()
-                hour_str = ",".join(map(str, random_hours))
+
+                random_times = []
+                for _ in range(nums):
+                    hour = random.randint(0, 23)
+                    minute = random.randint(0, 59)
+                    random_times.append((hour, minute))
+
+                random_times.sort()
+
+                hours = [str(time[0]) for time in random_times]
+                minutes = [str(time[1]) for time in random_times]
+
+                hour_str = ",".join(hours)
+                minute_str = ",".join(minutes)
                 self.scheduler.add_job(
                     func,
                     trigger='cron',
                     id=job_id,
                     hour=hour_str,
-                    minute=kwargs.get('minute', 0),  # 可指定分钟，默认0分
+                    minute=minute_str,  # 可指定分钟，默认0分
                     replace_existing=replace_existing,
                     args=kwargs.get('args', ()),
                     kwargs=kwargs.get('kwargs', {})
                 )
-                logging.info(f"每日随机任务 {job_id} 添加成功，每日执行{nums}次，时间点：{random_hours}时")
+                logging.info(f"每日随机任务 {job_id} 添加成功，每日执行{nums}次，时间点：{random_times}时")
             elif trigger == "weekly":
                 """
                 每周执行N次
@@ -143,7 +154,6 @@ class DjangoTaskScheduler:
                     id=job_id,
                     hour=0,  # 每小时（0-23点均执行）
                     minute=0,  # 固定在每小时的0分执行（可根据需要调整，如minute=30表示每小时30分）
-                    # minute='*',  # 每分钟执行一次（0-59分钟均触发）
                     replace_existing=True,  # 若存在同名job_id，替换旧任务
                     args=(),  # 无参数传递时用空元组
                     kwargs={}  # 无关键字参数时用空字典

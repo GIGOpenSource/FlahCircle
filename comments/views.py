@@ -444,9 +444,6 @@ class DynamicCommentViewSet(CommentViewSet):
         return ApiResponse(message="购买成功", data={'remaining_coins': user.gold_coin})
 
 
-def example_robot(rot):
-    print("执行定时任务")
-    print( rot)
 
 
 def update_vip_status():
@@ -513,6 +510,10 @@ class TaskSchedulerView(APIView):
                 return ApiResponse(code=400, message='method参数是必需的')
             if not robot_id:
                 return ApiResponse(code=400, message='robot_id是必需的')
+            try:
+                robot = User.objects.get(id=robot_id)
+            except User.DoesNotExist:
+                return ApiResponse(code=404, message='未找到对应的机器人用户')
             # 获取评论对象以获取exec_id
             try:
                 if method == 'comment':
@@ -526,17 +527,18 @@ class TaskSchedulerView(APIView):
                         kwargs={}
                     )
                     logging.info('添加评论任务成功')
-                elif method == 'reply':
                     job_id = f'mission_reply_{robot_id}'
                     scheduler.add_job(
                         func=sendMessagesToComment,
                         trigger='daily',  # 明确指定具体小时
                         job_id=job_id,
                         nums=5,
-                        args=(robot_id, method,),
+                        args=(robot_id, "reply",),
                         kwargs={}
                     )
                     logging.info('回复评论任务成功')
+                    robot.running_state = 'running'
+                    robot.save(update_fields=['running_state'])  # 保存状态更新
                 elif method == 'timing':
                     job_id = f'update_vip_status{robot_id}'
                     scheduler.add_job(
@@ -598,6 +600,11 @@ class TaskSchedulerViewAction(APIView):
             robot_id = request.query_params.get('robot_id')
             action = request.query_params.get('action')
             job_id = f'mission_{method}_{robot_id}'
+            try:
+                robot = User.objects.get(id=robot_id)
+            except User.DoesNotExist:
+                return ApiResponse(code=404, message='未找到对应的机器人用户')
+
             if not robot_id or not method:
                 return ApiResponse(code=400, message='定时任务ID和操作方法是必需的')
             method_map = {
@@ -606,10 +613,19 @@ class TaskSchedulerViewAction(APIView):
                 'get': self.get_job,
                 'delete': self.delete_job
             }
-            if action == 'pause':
-                # 暂停任务：更新状态为 paused
-                print("暂停")
-            response = method_map[action](job_id)
+            if action in method_map:
+                response = method_map[action](job_id)
+                # 根据操作类型更新running_state字段
+                if action == 'delete':
+                    robot.running_state = 'delete'  # 更新状态为删除
+                elif action == 'pause':
+                    robot.running_state = 'pause'  # 更新状态为暂停
+                elif action == 'resume':
+                    robot.running_state = 'running'  # 更新状态为运行中
+                robot.save(update_fields=['running_state'])  # 保存状态更新
+                return response
+            else:
+                return ApiResponse(code=400, message='不支持的操作类型')
             return response
         except Exception as e:
             return ApiResponse(code=400, message=f"操作失败：{str(e)}")
@@ -620,7 +636,26 @@ class TaskSchedulerViewAction(APIView):
         scheduler.resume_job(job_id)
         return ApiResponse(message=f'任务已继续')
     def get_job(self, job_id):
-        scheduler.get(job_id)
+        job = scheduler.get_job(job_id)
+        if job:
+            # 处理找到的任务，返回详细信息
+            job_info = {
+                "id": job.id,
+                "name": job.name,
+                "func_ref": job.func_ref,
+                "args": job.args,
+                "kwargs": job.kwargs,
+                "coalesce": job.coalesce,
+                "executor": job.executor,
+                "max_instances": job.max_instances,
+                "misfire_grace_time": job.misfire_grace_time,
+                "next_run_time": job.next_run_time.isoformat() if job.next_run_time else None,
+                "pending": job.pending,
+                "trigger": str(job.trigger)
+            }
+            return ApiResponse(data=job_info, message="任务详情获取成功")
+        else:
+            return ApiResponse(code=404, message="任务不存在")
     def delete_job(self, job_id):
         scheduler.delete_job(job_id)
         return ApiResponse(message=f'任务已删除')

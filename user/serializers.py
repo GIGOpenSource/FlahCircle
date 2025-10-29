@@ -42,7 +42,7 @@ class UserSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'username', 'user_nickname', 'email', 'phone', 'avatar','likes_count','following_count','followers_count',
             'member_level', 'user_bio', 'groups', 'group_ids', 'date_joined', 'session_id', 'is_follower','is_vip','vip_days','gold_coin',
-            'tags','status'
+            'tags','status','running_state'
         ]
         read_only_fields = ['id', 'username', 'date_joined']
 
