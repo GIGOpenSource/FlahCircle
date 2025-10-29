@@ -543,7 +543,6 @@ class TaskSchedulerView(APIView):
                         update_vip_status,
                         trigger='timing',
                         job_id=job_id,
-                        nums=5,
                         args='',
                         kwargs={}
                     )
