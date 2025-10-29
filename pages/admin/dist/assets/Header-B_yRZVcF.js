@@ -1,0 +1,1 @@
+import{d as s,A as a,c as t,o as n,b as o,g as r}from"./index-B-MbrMbZ.js";const c={class:"login-header"},d=s({__name:"Header",setup(_){return a(),(i,e)=>(n(),t("header",c,[...e[0]||(e[0]=[o("h1",null,"GIG Admin",-1),o("div",{class:"operations-container"},null,-1)])]))}}),p=r(d,[["__scopeId","data-v-339c1574"]]);export{p as default};

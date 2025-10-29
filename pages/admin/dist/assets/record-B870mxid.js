@@ -1,0 +1,1 @@
+import{s}from"./index-B-MbrMbZ.js";const t={ConsumeList:"/auth/purchases/",RechargeList:"/orders/",ConsumeDetails:"/auth/purchases/"};function u(e){return s.get({url:t.RechargeList,data:e})}function i(e){return s.get({url:t.ConsumeList,data:e})}function n(e){return s.get({url:`${t.ConsumeDetails}${e}/detail-info/`},{joinTime:!1})}export{i as a,n as b,u as g};

@@ -1,0 +1,1 @@
+import{s as t}from"./index-B-MbrMbZ.js";const a={HomeDashboard:"/home/dashboard",HomeChart:"/home/chart"};function e(){return t.get({url:a.HomeDashboard})}function o(){return t.get({url:a.HomeChart})}export{e as a,o as g};

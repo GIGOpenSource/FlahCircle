@@ -1,0 +1,1 @@
+import{s as e}from"./index-B-MbrMbZ.js";const a={TagtList:"/tags/",UpdateTag:"/tags/",CreateTag:"/tags/",DeleteTag:"/tags/"};function r(t){return e.get({url:a.TagtList,data:t})}function s(t){return e.post({url:a.CreateTag,data:t})}function u(t){return e.put({url:a.UpdateTag+t.id+"/",data:t})}function n(t){return e.delete({url:a.DeleteTag+t+"/"})}export{s as c,n as d,r as g,u};
