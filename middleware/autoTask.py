@@ -6,7 +6,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from django_apscheduler.jobstores import DjangoJobStore
 from django.utils import timezone
 
-from middleware.utils import logger, ApiResponse
+import logging
 
 fixed_exec_time = timezone.make_aware(
     datetime(2025, 10, 16, 10, 42, 0)  # 年、月、日、时、分、秒
@@ -28,9 +28,9 @@ class DjangoTaskScheduler:
             try:
                 self.scheduler.start()
                 self.is_running = True
-                logger.info("调度器启动成功")
+                logging.info("调度器启动成功")
             except Exception as e:
-                logger.info(f"调度器启动失败:  ")
+                logging.info(f"调度器启动失败:  ")
                 self.shutdown()
 
     def shutdown(self):
@@ -38,7 +38,7 @@ class DjangoTaskScheduler:
         if self.is_running:
             self.scheduler.shutdown()
             self.is_running = False
-            logger.info("调度器已关闭")
+            logging.info("调度器已关闭")
 
     def add_job(self, func, trigger, job_id, fixed_time=None,replace_existing=True, nums=None, **kwargs):
         """
@@ -69,7 +69,7 @@ class DjangoTaskScheduler:
                     args=kwargs.get('args', ()),
                     kwargs=kwargs.get('kwargs', {})
                 )
-                logger.info(f"每日随机任务 {job_id} 添加成功，每日执行{nums}次，时间点：{random_hours}时")
+                logging.info(f"每日随机任务 {job_id} 添加成功，每日执行{nums}次，时间点：{random_hours}时")
             elif trigger == "weekly":
                 """
                 每周执行N次
@@ -92,7 +92,7 @@ class DjangoTaskScheduler:
                     args=kwargs.get('args', ()),
                     kwargs=kwargs.get('kwargs', {})
                 )
-                logger.info(f"每周任务 {job_id} 添加成功，每周在{selected_days}执行")
+                logging.info(f"每周任务 {job_id} 添加成功，每周在{selected_days}执行")
             elif trigger == "monthly":
                 """
                 每月执行N次
@@ -113,7 +113,7 @@ class DjangoTaskScheduler:
                     args=kwargs.get('args', ()),
                     kwargs=kwargs.get('kwargs', {})
                 )
-                logger.info(f"每月任务 {job_id} 添加成功，每月在{selected_dates}号执行")
+                logging.info(f"每月任务 {job_id} 添加成功，每月在{selected_dates}号执行")
             if trigger == "fixed":
                 """
                 每fixed 
@@ -126,7 +126,7 @@ class DjangoTaskScheduler:
                     args=kwargs.get('args', ()),
                     kwargs=kwargs.get('kwargs', {})
                 )
-                logger.info(f"固定任务 {job_id} 添加成功，每日执行{nums}次，时间点：{fixed_time}时")
+                logging.info(f"固定任务 {job_id} 添加成功，每日执行{nums}次，时间点：{fixed_time}时")
             if trigger == "fixed213":
                 self.scheduler.add_job(
                         func,
@@ -134,33 +134,33 @@ class DjangoTaskScheduler:
                         id=job_id,
                         replace_existing=replace_existing, **kwargs
                 )
-                logger.info(f"任务 {job_id} 添加成功")
+                logging.info(f"任务 {job_id} 添加成功")
         except Exception as e:
-            logger.info(f"添加任务 {job_id} 失败: {e}")
+            logging.info(f"添加任务 {job_id} 失败: {e}")
 
     def remove_job(self, job_id):
         """删除定时任务"""
         try:
             self.scheduler.remove_job(job_id)
-            logger.info(f"任务 {job_id} 已删除")
+            logging.info(f"任务 {job_id} 已删除")
         except Exception as e:
-            logger.info(f"删除任务 {job_id} 失败: {e}")
+            logging.info(f"删除任务 {job_id} 失败: {e}")
 
     def pause_job(self, job_id):
         """暂停定时任务"""
         try:
             self.scheduler.pause_job(job_id)
-            logger.info(f"任务 {job_id} 已暂停")
+            logging.info(f"任务 {job_id} 已暂停")
         except Exception as e:
-            logger.info(f"暂停任务 {job_id} 失败: {e}")
+            logging.info(f"暂停任务 {job_id} 失败: {e}")
 
     def resume_job(self, job_id):
         """恢复定时任务"""
         try:
             self.scheduler.resume_job(job_id)
-            logger.info(f"任务 {job_id} 已恢复")
+            logging.info(f"任务 {job_id} 已恢复")
         except Exception as e:
-            logger.info(f"恢复任务 {job_id} 失败: {e}")
+            logging.info(f"恢复任务 {job_id} 失败: {e}")
 
     def modify_job(self, job_id, **kwargs):
         """
@@ -171,18 +171,18 @@ class DjangoTaskScheduler:
         """
         try:
             self.scheduler.modify_job(job_id, **kwargs)
-            logger.info(f"任务 {job_id} 已修改")
+            logging.info(f"任务 {job_id} 已修改")
         except Exception as e:
-            logger.info(f"修改任务 {job_id} 失败: {e}")
+            logging.info(f"修改任务 {job_id} 失败: {e}")
 
     def get_all_jobs(self):
         """获取所有定时任务"""
         try:
             jobs = self.scheduler.get_jobs()
-            logger.info(f"获取到 {len(jobs)} 个任务")
+            logging.info(f"获取到 {len(jobs)} 个任务")
             return jobs
         except Exception as e:
-            logger.info(f"获取任务失败: {e}")
+            logging.info(f"获取任务失败: {e}")
             return []
 
     def get_job(self, job_id):
@@ -192,21 +192,21 @@ class DjangoTaskScheduler:
             if not job:
                 return "任务不存在"
             if job:
-                logger.info(f"获取任务 {job_id} 成功")
+                logging.info(f"获取任务 {job_id} 成功")
                 # 直接从 job 对象获取参数（无需手动反序列化 job_state）
                 args = job.args  # 位置参数
                 kwargs = job.kwargs  # 关键字参数
                 func_name = job.func.__name__  # 任务函数名
                 func_module = job.func.__module__  # 任务函数所在模块
-                logger.info(f"任务函数: {func_module}.{func_name}")
-                logger.info(f"位置参数: {args}")
-                logger.info(f"关键字参数: {kwargs}")
+                logging.info(f"任务函数: {func_module}.{func_name}")
+                logging.info(f"位置参数: {args}")
+                logging.info(f"关键字参数: {kwargs}")
                 return job
             else:
-                logger.info(f"任务 {job_id} 不存在")
+                logging.info(f"任务 {job_id} 不存在")
                 return None
         except Exception as e:
-            logger.info(f"获取任务 {job_id} 失败: {e}")
+            logging.info(f"获取任务 {job_id} 失败: {e}")
 
 # 初始化调度器
 scheduler = DjangoTaskScheduler()
@@ -214,6 +214,6 @@ scheduler.start()
 
 def user_stat_task(user_id, task_desc):
     """用户统计任务函数"""
-    logger.info(f"执行用户统计任务：用户ID={user_id}，任务描述={task_desc}")
+    logging.info(f"执行用户统计任务：用户ID={user_id}，任务描述={task_desc}")
 
 # scheduler.get_all_jobs("user_stat_daily_1001")
