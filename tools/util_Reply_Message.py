@@ -97,10 +97,11 @@ def getFewDays(n: int):
     return s1, s2
 
 
-def sendMessagesToComment(botId: int):
+def sendMessagesToComment(botId: int, sendType: str = "comment"):
     """
     发送消息
     :param botId:机器人ID
+    :param sendType 发送消息类型 comment 评论 reply 回复
     :return:
     """
     """
@@ -109,20 +110,27 @@ def sendMessagesToComment(botId: int):
     3.生成提示词并保存
     """
     aiConfig = Config.objects.filter(enabled=True).first()
-    contentData = Content.objects.filter(create_time__range=getFewDays(7))
-    dynamicData = Dynamic.objects.filter(create_time__range=getFewDays(7))
-    dataList = list(contentData) + list(dynamicData)
+    if sendType == "comment":
+        contentData = Content.objects.filter(create_time__range=getFewDays(7))
+        dynamicData = Dynamic.objects.filter(create_time__range=getFewDays(7))
+        dataList = list(contentData) + list(dynamicData)
+    else:
+        commentData = Comment.objects.filter(create_time__range=getFewDays(2))
+        dataList = list(commentData)
     client = LargeModelUnit(aiConfig.model, aiConfig.api_key, aiConfig.base_url)
     sum_count = dataList.__len__()
     success_count = 0
     error_count = 0
     error_list = []
     for data in dataList:
-        message_prompt = genterateReplyMessages(data, data.type)
+        if sendType == "reply":
+            message_prompt = genterateReplyMessages(data, "comment")
+        else:
+            message_prompt = genterateReplyMessages(data, data.type)
         falg, message = client.generateToDeepSeek(message_prompt)
         if falg:
             success_count += 1
-            saveComment(data, message, User.objects.get(id=botId))
+            saveComment(data, message, User.objects.get(id=botId), sendType)
         else:
             error_count += 1
             error_list.append(data.title)
@@ -130,21 +138,32 @@ def sendMessagesToComment(botId: int):
     logger.info(f"总{sum_count}条，成功{success_count}条，失败{error_count}条")
     # return
 
-def saveComment(data: Content | Dynamic,  message: str, user: User):
+
+def saveComment(data: Content | Dynamic | Comment, message: str, user: User, sendType: str = "comment"):
     """
     保存评论
     :param data:
-
+    :param sendType
     :param message:
     :param user:
     :return:
     """
-    createData =Comment.objects.create(target_id=data.id,parent_comment_id=0)
-    createData.type = data.type if data.type == "dynamic" else "content"
+    createData = Comment.objects.create()
     createData.id = createData.id
+    if sendType == "comment":
+        createData.parent_comment_id = 0
+        createData.target_id = data.id
+        createData.user_id = user.id
+        createData.user_nickname = user.user_nickname
+    else:
+        createData.user_id = data.user_id
+        createData.user_nickname = data.user_nickname
+        createData.parent_comment_id = data.id
+        createData.target_id = data.target_id
+        createData.reply_to_user_id = user.id
+        createData.reply_to_user_nickname = data.user_nickname
+    createData.type = data.type if data.type == "dynamic" else "content"
     createData.content = message
-    createData.user_id = user.id
-    createData.user_nickname = user.user_nickname
     createData.like_count = 0
     createData.reply_count = 0
     createData.create_time = datetime.now()
