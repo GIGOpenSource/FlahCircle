@@ -123,8 +123,9 @@ def sendMessagesToComment(botId: int, sendType: str = "comment"):
     success_count = 0
     error_count = 0
     error_list = []
-    if sum_count >= 10:
-        dataList = random.sample(dataList, k=10)
+    sample_count = 10 # 抽取的 数量
+    if sum_count >= sample_count:
+        dataList = random.sample(dataList, k=sample_count)
     for data in dataList:
         if sendType == "reply":
             message_prompt = genterateReplyMessages(data, "comment")
