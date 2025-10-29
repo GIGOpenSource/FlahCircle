@@ -595,35 +595,33 @@ class TaskSchedulerViewAction(APIView):
     )
     def post(self, request):
         try:
-            method = request.data.get('method')
-            robot_id = request.data.get('robot_id')
-            action = request.data.get('action')
-            job_id = f'{method}_{robot_id}'
-
+            method = request.query_params.get('method')
+            robot_id = request.query_params.get('robot_id')
+            action = request.query_params.get('action')
+            job_id = f'mission_{method}_{robot_id}'
             if not robot_id or not method:
-                return ApiResponse(code=400, msg='定时任务ID和操作方法是必需的')
+                return ApiResponse(code=400, message='定时任务ID和操作方法是必需的')
             method_map = {
                 'pause': self.pause_job,
                 'resume': self.resume_job,
                 'get': self.get_job,
                 'delete': self.delete_job
             }
-            if method == 'pause':
+            if action == 'pause':
                 # 暂停任务：更新状态为 paused
                 print("暂停")
-            response = method_map[method](job_id)
+            response = method_map[action](job_id)
             return response
         except Exception as e:
-            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
-
+            return ApiResponse(code=400, message=f"操作失败：{str(e)}")
     def pause_job(self, job_id):
         scheduler.pause_job(job_id)
-        return ApiResponse(message=f'任务已暂停', status=200)
+        return ApiResponse(message=f'任务已暂停')
     def resume_job(self, job_id):
         scheduler.resume_job(job_id)
-        return ApiResponse(message=f'任务已继续', status=200)
+        return ApiResponse(message=f'任务已继续')
     def get_job(self, job_id):
         scheduler.get(job_id)
     def delete_job(self, job_id):
         scheduler.delete_job(job_id)
-        return ApiResponse(message=f'任务已删除', status=200)
+        return ApiResponse(message=f'任务已删除')

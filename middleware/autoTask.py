@@ -222,6 +222,15 @@ class DjangoTaskScheduler:
         except Exception as e:
             logging.info(f"获取任务 {job_id} 失败: {e}")
 
+    def delete_job(self, job_id):
+        """删除定时任务"""
+        try:
+            self.scheduler.remove_job(job_id)
+            logging.info(f"任务 {job_id} 已删除")
+            return True
+        except Exception as e:
+            logging.info(f"删除任务 {job_id} 失败: {e}")
+            return False
 # 初始化调度器
 scheduler = DjangoTaskScheduler()
 scheduler.start()
