@@ -1,0 +1,1 @@
+import{aA as s,aB as a}from"./index-0JfripWt.js";const e=a=>s("/chat/session/",a),o=s=>a("/chat/session/create-room/",s),t=s=>a("/chat/message/send/",s),c=a=>s("/chat/message/",a),i=a=>s("/notifications/",a);export{e as a,o as c,c as d,i as g,t as s};
