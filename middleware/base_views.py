@@ -7,7 +7,6 @@ from middleware.utils import ApiResponse  # 导入你的 ApiResponse
 
 class BaseViewSet(viewsets.ModelViewSet):
     """基础 ViewSet，统一处理响应格式为 ApiResponse"""
-
     def list(self, request, *args, **kwargs):
         try:
             queryset = self.filter_queryset(self.get_queryset())
@@ -19,7 +18,6 @@ class BaseViewSet(viewsets.ModelViewSet):
             return ApiResponse(code=200, data=serializer.data, message="列表获取成功")
         except Exception as e:
             return ApiResponse(code=500, message=f"列表获取失败: {str(e)}")
-
     def retrieve(self, request, *args, **kwargs):
         try:
             instance = self.get_object()
@@ -29,7 +27,6 @@ class BaseViewSet(viewsets.ModelViewSet):
             return ApiResponse(code=404, message=f"{self.queryset.model.__name__}不存在")
         except Exception as e:
             return ApiResponse(code=500, message=f"详情获取失败: {str(e)}")
-
     def create(self, request, *args, **kwargs):
         try:
             serializer = self.get_serializer(data=request.data)
