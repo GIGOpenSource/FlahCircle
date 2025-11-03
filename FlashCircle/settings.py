@@ -135,7 +135,7 @@ SPECTACULAR_SETTINGS = {
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-POSTGRES_HOST = os.getenv('POSTGRES_HOST') or os.getenv('DB_HOST') or "127.0.0.1"
+POSTGRES_HOST = os.getenv('POSTGRES_HOST') or os.getenv('DB_HOST') or "192.168.77.222"
 if POSTGRES_HOST:
     DATABASES = {
         'default': {
