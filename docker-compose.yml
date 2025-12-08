@@ -13,29 +13,29 @@ volumes:
     driver: local
 
 services:
-  nginx:
-    image: nginx:1.27-alpine
-    container_name: gig-nginx
-    ports:
-      - "80:80"
-      - "8081:8081"
-      - "8000:8000"
-    volumes:
-      - ./pages/app/dist/h5/:/usr/share/nginx/html/gig-x/
-      - ./pages/admin/dist/:/usr/share/nginx/html/gig-admin/
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-      - staticfiles:/usr/share/nginx/html/static
-      - nginx_logs:/var/log/nginx
-    networks:
-      - flashc_net
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:80/"]
-      interval: 30s
-      timeout: 3s
-      retries: 3
-    depends_on:
-      - web
+#  nginx:
+#    image: nginx:1.27-alpine
+#    container_name: gig-nginx
+#    ports:
+#      - "80:80"
+#      - "8081:8081"
+#      - "8000:8000"
+#    volumes:
+#      - ./pages/app/dist/h5/:/usr/share/nginx/html/gig-x/
+#      - ./pages/admin/dist/:/usr/share/nginx/html/gig-admin/
+#      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+#      - staticfiles:/usr/share/nginx/html/static
+#      - nginx_logs:/var/log/nginx
+#    networks:
+#      - flashc_net
+#    restart: unless-stopped
+#    healthcheck:
+#      test: ["CMD", "curl", "-f", "http://localhost:80/"]
+#      interval: 30s
+#      timeout: 3s
+#      retries: 3
+#    depends_on:
+#      - web
 
   web:
     build: .
@@ -49,7 +49,7 @@ services:
         python manage.py collectstatic --noinput &&
         python manage.py runserver 0.0.0.0:8000"
     ports:
-      - "10080:8000"
+      - "8062:8000"
     volumes:
       - staticfiles:/app/staticfiles
     environment:
@@ -79,7 +79,7 @@ services:
       - POSTGRES_PASSWORD=flashc
       - PGDATA=/var/lib/postgresql/data/pgdata
     ports:
-      - "5432:5432"
+      - "5434:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     networks:
