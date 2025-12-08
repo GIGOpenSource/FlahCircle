@@ -8,6 +8,8 @@ ENV PYTHONUNBUFFERED=1
 # 工作目录（容器内的项目根目录）
 WORKDIR /app
 
+RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
+
 # 安装系统依赖（PostgreSQL驱动需要的编译工具）
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
